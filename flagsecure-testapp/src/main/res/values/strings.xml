@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FLAG_SECURE Test App</string>
+    <!-- A stable, unique marker the spike searches for in the dumped a11y tree.
+         If this string shows up in the dump, FLAG_SECURE did NOT hide a11y text. -->
+    <string name="marker">FLAGSECURE_MARKER_7F3A — account balance $1,234.56</string>
+    <string name="field_hint">Secret field (type here)</string>
+    <string name="sign_in">Sign in</string>
+    <string name="explainer">This window is FLAG_SECURE. Screenshots are blocked. The spike checks whether the text above and the field below are still visible in the accessibility tree.</string>
+</resources>

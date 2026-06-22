@@ -1,2 +1,21 @@
 # gstack browse/tooling runtime scratch (contains local tokens, never commit)
 .gstack/
+
+# Android / Gradle build outputs
+.gradle/
+build/
+**/build/
+# Machine-specific SDK location (each dev sets sdk.dir here)
+local.properties
+# IDE
+*.iml
+.idea/
+captures/
+.cxx/
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+# Pulled spike a11y-tree dumps (evidence stays out of git unless deliberately added)
+/dumps/
