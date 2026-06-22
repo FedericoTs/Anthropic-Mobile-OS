@@ -1,8 +1,6 @@
-package org.agentnativeos.app.model
+package org.agentnativeos.core.model
 
 import org.agentnativeos.core.action.UntrustedObservation
-import org.agentnativeos.core.model.ActionJson
-import org.agentnativeos.core.model.PlanningContext
 
 /** Builds the system + user messages for the planner. */
 object Prompt {

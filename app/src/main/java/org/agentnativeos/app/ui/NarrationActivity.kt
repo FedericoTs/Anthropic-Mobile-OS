@@ -16,12 +16,12 @@ import org.agentnativeos.app.AgentSession
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.NarrationDemo
 import org.agentnativeos.app.R
-import org.agentnativeos.app.model.ClaudeModelProvider
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.events.NarrationEvent
 import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
 import org.agentnativeos.core.model.Auth
+import org.agentnativeos.core.model.ClaudeModelProvider
 
 /**
  * The trust surface: a live vertical timeline of the agent's steps. Done steps

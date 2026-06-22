@@ -17,7 +17,11 @@ sealed interface AuthMode {
  */
 data class ModelId(val name: String) {
     companion object {
-        val DEFAULT = ModelId("claude-default")
+        /** Production default planner. */
+        val DEFAULT = ModelId("claude-opus-4-8")
+
+        /** Cheapest model — used by the live smoke test so a real round-trip costs cents. */
+        val CHEAPEST = ModelId("claude-haiku-4-5")
     }
 }
 
