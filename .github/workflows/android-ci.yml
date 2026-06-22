@@ -30,7 +30,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Build, unit test, lint
-        run: ./gradlew testDebugUnitTest assembleDebug lintDebug --stacktrace
+        run: ./gradlew :core:test testDebugUnitTest assembleDebug lintDebug --stacktrace
 
       - name: Upload reports
         if: always()
