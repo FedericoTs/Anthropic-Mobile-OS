@@ -27,12 +27,13 @@ done
 log "agent service connected: $SVC_OK"
 
 # Drive a real, safe intent on the Settings screen via the scripted plan.
+# NOTE: pass the whole `am` line as ONE string to adb shell, with device-side
+# single quotes around multi-word/semicolon values, so the on-device /system/bin/sh
+# doesn't split on spaces or treat ';' as a command separator.
 adb logcat -c
 adb shell am start -a android.settings.SETTINGS >/dev/null 2>&1
 sleep 3
-adb shell am broadcast -n "$APP/.device.AgentCommandReceiver" -a "$APP.RUN_SCRIPTED" \
-  --es intent "open battery settings" \
-  --es script "tap:Battery;done:opened battery" >/dev/null
+adb shell "am broadcast -n $APP/.device.AgentCommandReceiver -a $APP.RUN_SCRIPTED --es intent 'open battery settings' --es script 'tap:Battery;done:opened battery'" >/dev/null
 sleep 5
 adb logcat -d -s AGENT AGENT_CMD | tr -d '\r' > "$EV/app-e2e.txt"
 
