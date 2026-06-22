@@ -35,12 +35,23 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    lint {
+        warningsAsErrors = false
+        abortOnError = true
+        textReport = true
+        // Versions are pinned in gradle/libs.versions.toml for reproducibility;
+        // dependency-bump nudges are noise for a gated spike.
+        disable += setOf("GradleDependency", "AndroidGradlePluginVersion")
+    }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
+    testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Spike A11y Harness</string>
     <string name="accessibility_service_description">T0 hostile-app spike. Reads the active window\'s accessibility tree and performs one tap / one text entry on demand, to test whether an AccessibilityService can perceive and act on third-party apps. Drive it with adb broadcasts.</string>
 
@@ -7,5 +7,6 @@
     <string name="status_enabled">Service: ENABLED — ready. Drive it with the adb scripts in /scripts.</string>
     <string name="status_disabled">Service: DISABLED — tap below, then enable \"Spike A11y Harness\".</string>
     <string name="btn_open_a11y_settings">Open Accessibility settings</string>
-    <string name="instructions">After enabling the service, drive it from your host:\n\n# dump the current screen’s a11y tree\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.DUMP\n\n# tap a node by its text\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.TAP --es text \"Search settings\"\n\n# type into an editable field\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.TYPE --es text \"hello\"\n\nDumps land in: /sdcard/Android/data/org.agentnativeos.spike/files/dumps/\nLogcat tags: SPIKE, SPIKE_TREE, SPIKE_ACT, SPIKE_CMD</string>
+    <!-- TypographyDashes: the adb broadcast flags below (es, ef) are CLI flags, not dashes. -->
+    <string name="instructions" tools:ignore="TypographyDashes">After enabling the service, drive it from your host:\n\n# dump the current screen’s a11y tree\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.DUMP\n\n# tap a node by its text\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.TAP --es text \"Search settings\"\n\n# type into an editable field\nadb shell am broadcast -n org.agentnativeos.spike/.CommandReceiver -a org.agentnativeos.spike.TYPE --es text \"hello\"\n\nDumps land in: /sdcard/Android/data/org.agentnativeos.spike/files/dumps/\nLogcat tags: SPIKE, SPIKE_TREE, SPIKE_ACT, SPIKE_CMD</string>
 </resources>

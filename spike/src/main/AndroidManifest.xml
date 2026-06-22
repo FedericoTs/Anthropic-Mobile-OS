@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- DataExtractionRules: a spike with allowBackup=false has no backup config
+         to declare; the deprecation hint is N/A here. -->
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/sym_def_app_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SpikeHarness">
+        android:theme="@style/Theme.SpikeHarness"
+        tools:ignore="DataExtractionRules">
 
         <!-- The only UI: a launcher screen to enable the service + show adb usage. -->
         <activity
@@ -35,9 +39,11 @@
 
         <!-- Driven from the host via `adb shell am broadcast -n <pkg>/.CommandReceiver`.
              exported=true so the adb shell UID can reach it. SPIKE / EMULATOR ONLY:
-             any app on the device could also trigger these commands. -->
+             any app on the device could also trigger these commands. The
+             ExportedReceiver warning is intentional and accepted for the spike. -->
         <receiver
             android:name=".CommandReceiver"
-            android:exported="true" />
+            android:exported="true"
+            tools:ignore="ExportedReceiver" />
     </application>
 </manifest>

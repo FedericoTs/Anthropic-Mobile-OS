@@ -1,66 +1,29 @@
 package org.agentnativeos.spike
 
 import android.content.Context
-import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import org.agentnativeos.spike.perception.AccessibilityUiNode
+import org.agentnativeos.spike.perception.TreeRenderer
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Serializes an [AccessibilityNodeInfo] tree into a human-readable, indented form
- * and persists it. This is the "perceive" half of the spike: what the agent can
- * actually see of another app.
- *
- * Security stance, baked in from day one (see DESIGN.md / Security Model): the
- * text of password fields is never logged or written. The spike measures *whether*
- * a field is perceivable, not its secret contents.
+ * The "perceive" half of the spike: render the active window's a11y tree and
+ * persist it as evidence. The rendering + credential redaction live in the pure,
+ * unit-tested [TreeRenderer]; this object is just the Android glue (logcat + file).
  */
 object A11yTreeDumper {
 
     private const val TAG = "SPIKE_TREE"
 
-    /** Render the tree rooted at [root] to a string and echo it to logcat. */
+    /** Render the tree rooted at [root] and echo it to logcat. Returns the text. */
     fun dump(root: AccessibilityNodeInfo): String {
-        val sb = StringBuilder()
-        var count = 0
-
-        fun walk(node: AccessibilityNodeInfo?, depth: Int) {
-            if (node == null) return
-            count++
-            val bounds = Rect().also { node.getBoundsInScreen(it) }
-            val text = when {
-                node.isPassword -> "[REDACTED:password]"
-                node.text != null -> "\"${sanitize(node.text.toString())}\""
-                else -> "null"
-            }
-            val desc = node.contentDescription?.let { "\"${sanitize(it.toString())}\"" } ?: "null"
-            sb.append("  ".repeat(depth))
-                .append('<').append(shortClass(node.className)).append('>')
-                .append(" pkg=").append(node.packageName ?: "-")
-                .append(" id=").append(node.viewIdResourceName ?: "-")
-                .append(" text=").append(text)
-                .append(" desc=").append(desc)
-                .append(" bounds=").append(bounds.toShortString())
-                .append(" flags=[")
-                .append(if (node.isClickable) 'C' else '-')
-                .append(if (node.isFocusable) 'F' else '-')
-                .append(if (node.isEditable) 'E' else '-')
-                .append(if (node.isScrollable) 'S' else '-')
-                .append(if (node.isCheckable) 'K' else '-')
-                .append(if (node.isPassword) 'P' else '-')
-                .append("]\n")
-            for (i in 0 until node.childCount) {
-                walk(node.getChild(i), depth + 1)
-            }
-        }
-
-        walk(root, 0)
-        val out = "ROOT package=${root.packageName} nodeCount=$count\n" + sb
-        Log.i(TAG, "\n$out")
-        return out
+        val result = TreeRenderer.render(AccessibilityUiNode(root))
+        Log.i(TAG, "\n${result.text}")
+        return result.text
     }
 
     /** Write [content] to the app's external files dir. Returns the absolute path. */
@@ -78,9 +41,4 @@ object A11yTreeDumper {
             "(persist failed: ${t.message})"
         }
     }
-
-    private fun sanitize(s: String): String = s.replace("\n", "\\n").replace("\"", "'")
-
-    private fun shortClass(c: CharSequence?): String =
-        c?.toString()?.substringAfterLast('.')?.ifEmpty { "View" } ?: "View"
 }

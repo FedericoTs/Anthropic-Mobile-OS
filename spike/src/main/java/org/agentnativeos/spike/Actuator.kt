@@ -6,6 +6,7 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import org.agentnativeos.spike.perception.NodeMatcher
 
 /**
  * The "act" half of the spike: one tap and one text entry, the two primitives T0
@@ -83,14 +84,13 @@ object Actuator {
         return ok
     }
 
-    private fun matches(node: AccessibilityNodeInfo, query: String): Boolean {
-        val t = node.text?.toString()
-        val d = node.contentDescription?.toString()
-        val id = node.viewIdResourceName
-        return (t != null && t.contains(query, ignoreCase = true)) ||
-            (d != null && d.contains(query, ignoreCase = true)) ||
-            (id != null && id.contains(query, ignoreCase = true))
-    }
+    private fun matches(node: AccessibilityNodeInfo, query: String): Boolean =
+        NodeMatcher.matches(
+            text = node.text?.toString(),
+            contentDescription = node.contentDescription?.toString(),
+            viewId = node.viewIdResourceName,
+            query = query,
+        )
 
     /** Breadth-first search for the first node satisfying [predicate]. */
     private fun findNode(

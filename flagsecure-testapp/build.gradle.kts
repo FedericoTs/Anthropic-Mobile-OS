@@ -33,6 +33,13 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    lint {
+        warningsAsErrors = false
+        abortOnError = true
+        textReport = true
+        disable += setOf("GradleDependency", "AndroidGradlePluginVersion")
+    }
 }
 
 dependencies {
