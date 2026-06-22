@@ -2,11 +2,10 @@
 
 Captured during /plan-eng-review (2026-06-22). Each item has enough context to pick up cold.
 
-## AOSP custom-build vs Play Integrity (strategy — revisit in /plan-ceo-review)
+## AOSP custom-build vs Play Integrity (RESOLVED 2026-06-22 in /plan-ceo-review)
 - **What:** A custom AOSP build (Milestone 1) trips Play Integrity / hardware attestation, so Integrity-checked apps (banking, etc.) may refuse to run on it.
-- **Why:** Conflicts with the core "drives your real apps" promise. The M0 -> M1 trajectory may remove access to the very apps that make Milestone 0 compelling.
-- **Context:** Surfaced by the plan-eng-review outside voice. Partly answered by the M0 hostile-app spike: if the spike shows Integrity blocks the high-value apps, the full-custom-OS trajectory needs rethinking (stay userspace longer, target a device that can pass attestation, or lean into SDK-cooperating apps).
-- **Depends on:** M0 hostile-app spike result.
+- **Resolution:** Non-goal for this project. The goal is an open-source "aha" demo, not running your bank. The demo drives open / installed / web apps out of the box; Integrity-gated banking is explicitly out of scope. UnifiedAttestation is the long-term open path IF banking-class apps ever matter. No longer a blocker.
+- **Context:** Surfaced by the plan-eng-review outside voice (Play Integrity May 2025 hardware attestation). The M0 hostile-app spike still validates the Accessibility foundation on cooperative apps.
 
 ## a11y-tree context/token budget (perf — v1)
 - **What:** With per-step replanning, every action ships the Accessibility tree to the model. Busy screens = big trees = high token cost + latency.
@@ -27,3 +26,21 @@ Captured during /plan-eng-review (2026-06-22). Each item has enough context to p
 - **What:** Decide whether a PWA / web-app marketplace is the cross-platform answer for the iOS world, or iOS support is cut entirely.
 - **Why:** Native iOS-app execution is impossible on non-Apple hardware; "run both marketplaces" needs a real answer or an explicit cut.
 - **Context:** From the design doc open questions.
+
+## Fully-local / offline model backend (headline v1.1 differentiator — from /plan-ceo-review)
+- **What:** Run the agent loop on an on-device model with zero cloud, plugged into the same `ModelProvider` interface as the cloud dual-auth path.
+- **Why:** The deepest open/private flex and the one thing Gemini Intelligence structurally cannot do. The cloud dual-auth path carries the openness message for v1; local is the v1.1 upgrade.
+- **Context:** Needs real model-quality eval (small phone models are weaker planners). Deferred in the cherry-pick ceremony. Plugs into the ModelProvider seam built in M0.
+- **Priority:** P2 (v1.1 headline).
+
+## Multi-agent coordinator hardening (for the gated stretch goal — from /plan-ceo-review)
+- **What:** When the coordinator spawns N parallel sub-agents, define the partial-result/merge policy (1A abort+handoff generalized to N) and an N-times token-cost budget.
+- **Why:** Parallel agents multiply both the failure surface and the cost; the headline OpenClaw aha is only credible if partial failures are handled cleanly.
+- **Context:** Only relevant once multi-agent orchestration starts (gated on the single-agent loop landing first).
+- **Priority:** P2 (gated).
+
+## Reserve aha candidates (parked — from /plan-ceo-review cherry-pick)
+- **What:** record-once/replay automations (open, forkable "skills"); an open capability/skill marketplace seed; voice-driven hands-free orchestration.
+- **Why:** Each is a strong aha amplifier but not needed for the first demo.
+- **Context:** Surface any of these for a decision when M0 is landing. Voice was deferred from M0 in the eng review.
+- **Priority:** P3.
