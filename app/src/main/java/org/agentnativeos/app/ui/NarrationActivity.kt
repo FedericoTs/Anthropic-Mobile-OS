@@ -11,12 +11,17 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import org.agentnativeos.app.AgentController
 import org.agentnativeos.app.AgentSession
+import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.NarrationDemo
 import org.agentnativeos.app.R
+import org.agentnativeos.app.model.ClaudeModelProvider
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.events.NarrationEvent
+import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
+import org.agentnativeos.core.model.Auth
 
 /**
  * The trust surface: a live vertical timeline of the agent's steps. Done steps
@@ -52,11 +57,24 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         }
 
         AgentSession.setListener(this)
-        // Render anything already in flight, then start the demo if requested.
+        // Render anything already in flight, then start a run if requested.
         AgentSession.snapshot().forEach { addRow(it) }
-        if (intent.getBooleanExtra(EXTRA_DEMO, false) && !AgentSession.running) {
-            NarrationDemo.run()
+        when {
+            AgentSession.running -> Unit // already in flight; we just render it
+            intent.getBooleanExtra(EXTRA_DEMO, false) -> NarrationDemo.run()
+            intent.getBooleanExtra(EXTRA_RUN, false) -> startRealRun(intent.getStringExtra(EXTRA_INTENT))
         }
+    }
+
+    /** Start a real run against the live screen using the stored model credential. */
+    private fun startRealRun(intentText: String?) {
+        if (intentText.isNullOrBlank()) return
+        val auth = Auth.choose(CredentialStore(this).apiKey, null) ?: return
+        AgentController.run(
+            intentText,
+            ClaudeModelProvider(auth),
+            ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) },
+        )
     }
 
     override fun onDestroy() {
@@ -140,6 +158,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     companion object {
         const val EXTRA_DEMO = "demo"
+        const val EXTRA_RUN = "run"
         const val EXTRA_INTENT = "intent"
     }
 }

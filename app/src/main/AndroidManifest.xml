@@ -39,6 +39,11 @@
             android:name=".ui.AppGridActivity"
             android:exported="false" />
 
+        <!-- Model credential entry. -->
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false" />
+
         <!-- The agent: perceives + acts on the live screen and runs the loop. -->
         <service
             android:name=".device.AgentAccessibilityService"

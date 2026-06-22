@@ -8,6 +8,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import org.agentnativeos.app.CredentialStore
+import org.agentnativeos.app.HomeAction
+import org.agentnativeos.app.HomeRouter
 import org.agentnativeos.app.R
 import org.agentnativeos.app.device.AgentAccessibilityService
 
@@ -36,41 +39,34 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, AppGridActivity::class.java))
         }
         findViewById<Button>(R.id.btn_swap_model).setOnClickListener {
-            // M0: model configuration is a follow-up; surface the state for now.
-            toast(getString(R.string.needs_model))
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
     private fun submit(raw: String) {
-        val intent = raw.trim()
-        if (intent.isEmpty()) return
-
-        // Showcase: "demo" opens the narration feed with a canned run so you can
-        // see the agent think + the confirm gate without a model configured.
-        if (intent.equals("demo", ignoreCase = true)) {
-            startActivity(
-                Intent(this, NarrationActivity::class.java)
-                    .putExtra(NarrationActivity.EXTRA_DEMO, true),
+        val hasModel = CredentialStore(this).isConfigured
+        val serviceEnabled = AgentAccessibilityService.instance != null
+        when (val action = HomeRouter.route(raw, hasModel, serviceEnabled)) {
+            HomeAction.Ignore -> Unit
+            HomeAction.ShowDemo -> startActivity(
+                Intent(this, NarrationActivity::class.java).putExtra(NarrationActivity.EXTRA_DEMO, true),
             )
-            return
+            is HomeAction.OpenApp ->
+                if (!launchByLabel(action.query)) toast(getString(R.string.app_not_found, action.query))
+            HomeAction.NeedService -> {
+                toast(getString(R.string.needs_service))
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            HomeAction.NeedModel -> {
+                toast(getString(R.string.needs_model))
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+            is HomeAction.RunAgent -> startActivity(
+                Intent(this, NarrationActivity::class.java)
+                    .putExtra(NarrationActivity.EXTRA_RUN, true)
+                    .putExtra(NarrationActivity.EXTRA_INTENT, action.intent),
+            )
         }
-
-        // Escape hatch: "open X" launches an app directly, never trapping the user.
-        if (intent.startsWith("open ", ignoreCase = true)) {
-            val query = intent.substring(5).trim()
-            if (!launchByLabel(query)) toast(getString(R.string.app_not_found, query))
-            return
-        }
-
-        // Agent run requires the service enabled and a model configured (M0 guidance).
-        if (AgentAccessibilityService.instance == null) {
-            toast(getString(R.string.needs_service))
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            return
-        }
-        toast(getString(R.string.needs_model))
-        // When a model is configured:
-        //   AgentController.run(intent, ClaudeModelProvider(auth), confirmHandler)
     }
 
     private fun launchByLabel(query: String): Boolean {

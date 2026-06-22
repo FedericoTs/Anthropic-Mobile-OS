@@ -23,4 +23,14 @@
     <string name="confirm_approve">Approve</string>
     <string name="confirm_skip">Skip</string>
     <string name="narration_intent_prefix">Intent: %1$s</string>
+
+    <string name="settings_title">Model</string>
+    <string name="settings_explainer">Paste your Anthropic API key. It is stored encrypted on this device only, and sent only to Anthropic over TLS — never logged or shown in the agent feed.</string>
+    <string name="settings_key_hint">Anthropic API key (sk-…)</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_clear">Clear</string>
+    <string name="settings_saved">Saved. The agent can now run your intents.</string>
+    <string name="settings_cleared">Cleared.</string>
+    <string name="settings_configured">A key is saved on this device.</string>
+    <string name="settings_not_configured">No key saved yet.</string>
 </resources>
