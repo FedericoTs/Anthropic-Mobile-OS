@@ -17,14 +17,29 @@ SDK-cooperating apps. Nothing here is the product; it is the gate.
 | `:spike` | The harness: `SpikeAccessibilityService` + tree dumper + tap/type actuator + `CommandReceiver` (adb-driven) + a one-screen launcher |
 | `:flagsecure-testapp` | A controlled Tier-2 target that sets `FLAG_SECURE`, with a known marker string + an editable field |
 
-## Prerequisites
+## Zero to verdict (Linux with KVM)
+
+From a fresh clone, three commands get you to a running spike:
+
+```bash
+./scripts/bootstrap-sdk.sh     # install SDK + emulator + API-34 image, write local.properties
+./scripts/create-avd.sh        # create the 'spike34' AVD
+./scripts/start-emulator.sh    # boot it, wait for ready
+./scripts/run-matrix.sh        # build, install, enable, walk Tiers 1-2
+```
+
+The emulator needs hardware acceleration (`/dev/kvm` on Linux). On macOS/Windows,
+use Android Studio's emulator instead and skip `bootstrap-sdk.sh` /
+`start-emulator.sh`.
+
+## Prerequisites (manual setup)
 
 - Android SDK (set `sdk.dir` in `local.properties`, or `ANDROID_HOME`).
 - An emulator: **API 34**, a stock image. `adb` on your PATH.
 - JDK 17+.
 
 ```bash
-# one-time: point Gradle at your SDK
+# one-time: point Gradle at your SDK (bootstrap-sdk.sh does this for you)
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 ```
 
