@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import org.agentnativeos.app.AgentController
 import org.agentnativeos.app.AgentSession
 import org.agentnativeos.app.CredentialStore
+import org.agentnativeos.app.ModelPreferences
 import org.agentnativeos.app.NarrationDemo
 import org.agentnativeos.app.R
 import org.agentnativeos.core.action.AgentAction
@@ -71,9 +72,10 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         if (intentText.isNullOrBlank()) return
         val store = CredentialStore(this)
         val auth = Auth.choose(store.apiKey, store.oauthToken) ?: return
+        val model = ModelPreferences(this).selected
         AgentController.run(
             intentText,
-            ClaudeModelProvider(auth),
+            ClaudeModelProvider(auth, model),
             ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) },
         )
     }

@@ -10,6 +10,7 @@
     <string name="home_recent_none">No recent activity yet.</string>
     <string name="home_apps">Apps</string>
     <string name="swap_model_pill">Claude · swap model</string>
+    <string name="home_model_pill">● %1$s · swap model</string>
 
     <string name="needs_service">Enable “Agent OS” in Settings › Accessibility so the agent can act.</string>
     <string name="needs_model">No model configured yet. Set a Claude login or API key to run intents.</string>
@@ -26,6 +27,10 @@
 
     <string name="settings_title">Model</string>
     <string name="settings_explainer">Give the agent a credential to run intents. Everything you paste is stored encrypted on this device only, and sent only to Anthropic over TLS — never logged or shown in the agent feed.</string>
+
+    <string name="settings_model_header">Planner model</string>
+    <string name="settings_model_explainer">Pick the model that runs your intents. The cheapest is the default — step up for harder, multi-app tasks. Takes effect on your next run.</string>
+    <string name="settings_model_selected">Now using %1$s.</string>
 
     <string name="settings_apikey_header">API key</string>
     <string name="settings_key_hint">Anthropic API key (sk-…)</string>

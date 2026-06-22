@@ -17,11 +17,15 @@ sealed interface AuthMode {
  */
 data class ModelId(val name: String) {
     companion object {
-        /** Production default planner. */
-        val DEFAULT = ModelId("claude-opus-4-8")
-
-        /** Cheapest model — used by the live smoke test so a real round-trip costs cents. */
+        /** Cheapest model — also the default planner (see below) and the live-test model. */
         val CHEAPEST = ModelId("claude-haiku-4-5")
+
+        /**
+         * Production default planner. The cheapest model, so casual use stays
+         * inexpensive; the user can pick a stronger one per activity in Settings
+         * (see [ModelCatalog]).
+         */
+        val DEFAULT = CHEAPEST
     }
 }
 

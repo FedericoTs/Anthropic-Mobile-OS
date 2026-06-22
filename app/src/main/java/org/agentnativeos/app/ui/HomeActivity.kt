@@ -11,8 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.HomeAction
 import org.agentnativeos.app.HomeRouter
+import org.agentnativeos.app.ModelPreferences
 import org.agentnativeos.app.R
 import org.agentnativeos.app.device.AgentAccessibilityService
+import org.agentnativeos.core.model.ModelCatalog
 
 /**
  * T5: the static ambient home — the calm resting face. The intent input is the
@@ -41,6 +43,14 @@ class HomeActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_swap_model).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reflect the chosen model on the pill (DESIGN: dot + model name + swap).
+        val model = ModelCatalog.byId(ModelPreferences(this).selected)
+        findViewById<Button>(R.id.btn_swap_model).text =
+            getString(R.string.home_model_pill, model.shortLabel)
     }
 
     private fun submit(raw: String) {

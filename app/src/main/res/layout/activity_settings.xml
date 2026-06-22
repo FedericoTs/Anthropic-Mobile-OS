@@ -27,6 +27,31 @@
             android:textColor="@color/muted"
             android:textSize="14sp" />
 
+        <!-- Planner model picker (populated from ModelCatalog at runtime) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:text="@string/settings_model_header"
+            android:textColor="@color/text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="10dp"
+            android:text="@string/settings_model_explainer"
+            android:textColor="@color/muted"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/model_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            android:orientation="vertical" />
+
         <!-- API key (the default, supported path) -->
         <TextView
             android:layout_width="wrap_content"
