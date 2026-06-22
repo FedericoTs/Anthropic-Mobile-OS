@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- The planner talks to the Anthropic Messages API over HTTPS. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- See installed launcher apps for the app-grid escape hatch (Android 11+
          package visibility). -->
     <queries>
