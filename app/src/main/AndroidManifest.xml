@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- See installed launcher apps for the app-grid escape hatch (Android 11+
+         package visibility). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AgentOS"
+        tools:ignore="DataExtractionRules">
+
+        <!-- T5: the static ambient home (idle resting face). -->
+        <activity
+            android:name=".ui.HomeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Escape hatch: the classic app grid. -->
+        <activity
+            android:name=".ui.AppGridActivity"
+            android:exported="false" />
+
+        <!-- The agent: perceives + acts on the live screen and runs the loop. -->
+        <service
+            android:name=".device.AgentAccessibilityService"
+            android:exported="false"
+            android:label="@string/agent_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/agent_accessibility_config" />
+        </service>
+
+        <!-- adb/demo-driven entry point (run an intent, or a scripted plan for CI).
+             exported so the shell UID can reach it; demo/emulator only. -->
+        <receiver
+            android:name=".device.AgentCommandReceiver"
+            android:exported="true"
+            tools:ignore="ExportedReceiver" />
+    </application>
+</manifest>

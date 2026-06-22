@@ -17,13 +17,24 @@ GO/PIVOT verdict.
 ## Repository layout
 
 ```
+core/                  Agent brain (pure Kotlin): loop, policy gate, event bus, model seam
+app/                   On-device app: AccessibilityService runs the loop + the T5 home UI
 spike/                 T0 harness: AccessibilityService + tree dump + tap/type (issue #1)
 flagsecure-testapp/    Controlled FLAG_SECURE target for the spike's Tier 2
-scripts/               adb drivers (enable-service, dump-tree, tap, type, run-matrix)
+scripts/               adb drivers + CI emulator suite (spike matrix + app loop e2e)
 docs/designs/          Plan + locked design direction + mockups
 docs/spikes/           Spike verdicts (T0 GO/PIVOT lands here)
 DESIGN.md              Design system (type, color, spacing, motion, a11y)
 ```
+
+## Milestone 0 status
+
+T0 spike: **GO** (`docs/spikes/t0-hostile-app.md`). The agent brain (`core/`) is
+built and unit-tested; the on-device app (`app/`) runs that loop through an
+`AccessibilityService` and ships the static ambient home. CI runs the brain's
+tests on every push and exercises the loop on a real emulator (spike Tiers 1-2 +
+app end-to-end). Remaining: the live Claude model call (needs a credential),
+Tier-3 on a physical device, and the P2/gated multi-agent + undo work.
 
 ## Build (Milestone 0 spike)
 

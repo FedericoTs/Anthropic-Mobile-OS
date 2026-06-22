@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Agent OS</string>
+    <string name="agent_service_label">Agent OS</string>
+    <string name="agent_service_description">Lets Agent OS perceive the screen and act across your apps to carry out your intentions. The agent reads the accessibility tree, proposes one step at a time, and always asks before any high side-effect action.</string>
+
+    <string name="home_hero">What do you want to do?</string>
+    <string name="home_input_hint">Describe it, or type “open” and an app name</string>
+    <string name="home_send">Go</string>
+    <string name="home_recent_none">No recent activity yet.</string>
+    <string name="home_apps">Apps</string>
+    <string name="swap_model_pill">Claude · swap model</string>
+
+    <string name="needs_service">Enable “Agent OS” in Settings › Accessibility so the agent can act.</string>
+    <string name="needs_model">No model configured yet. Set a Claude login or API key to run intents.</string>
+    <string name="opening">Opening %1$s…</string>
+    <string name="app_not_found">Couldn’t find an app matching “%1$s”.</string>
+    <string name="app_grid_title">Apps</string>
+</resources>

@@ -42,8 +42,8 @@ jobs:
             **/build/test-results/**
           if-no-files-found: ignore
 
-  spike-matrix:
-    name: Spike matrix (emulator, Tiers 1-2)
+  emulator-suite:
+    name: Emulator suite (spike Tiers 1-2 + app loop e2e)
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -63,10 +63,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Runs the actual harness on a real emulator: installs both apps, enables
-      # the AccessibilityService, then perceives + acts on Settings (Tier 1) and
-      # the FLAG_SECURE app (Tier 2). Also runs the connected UiAutomator guard.
-      - name: Run spike Tiers 1-2 on emulator
+      # On a real emulator: the connected perceive guard, the T0 spike matrix
+      # (Tiers 1-2), and the :app end-to-end (the real core AgentLoop driving a
+      # live screen through the AccessibilityService with a scripted plan).
+      - name: Run emulator suite
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -74,14 +74,12 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: |
-            ./gradlew :spike:connectedDebugAndroidTest --stacktrace || echo "connected test non-zero (captured)"
-            bash scripts/ci-spike-matrix.sh evidence
+          script: bash scripts/ci-emulator-suite.sh evidence
 
-      - name: Upload spike evidence
+      - name: Upload emulator evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spike-evidence
+          name: emulator-evidence
           path: evidence/**
           if-no-files-found: warn

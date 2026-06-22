@@ -22,7 +22,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "anthropic-mobile-os"
 
-// Milestone 0: agent core (pure Kotlin) + the T0 spike modules.
+// Milestone 0: agent core (pure Kotlin) + the on-device app + the T0 spike.
 include(":core")
+include(":app")
 include(":spike")
 include(":flagsecure-testapp")

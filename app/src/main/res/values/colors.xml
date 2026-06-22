@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Anthropic warm palette (DESIGN.md). Light/canonical. The full palette is
+     kept as the design system even before every token is referenced in UI. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources">
+    <color name="paper">#F0EEE6</color>
+    <color name="surface">#FFFDF7</color>
+    <color name="surface_sunk">#E9E6DC</color>
+    <color name="text">#1F1F1C</color>
+    <color name="muted">#6B6862</color>
+    <color name="border">#DAD6C9</color>
+    <color name="accent">#D97757</color>
+    <color name="accent_press">#C45F3F</color>
+    <color name="on_accent">#FFFDF7</color>
+</resources>

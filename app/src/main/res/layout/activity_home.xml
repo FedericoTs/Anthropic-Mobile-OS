@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/txt_recent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:text="@string/home_recent_none"
+        android:textColor="@color/muted"
+        android:textSize="14sp" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="serif"
+        android:paddingBottom="20dp"
+        android:text="@string/home_hero"
+        android:textColor="@color/text"
+        android:textSize="34sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/input_intent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_input"
+            android:hint="@string/home_input_hint"
+            android:imeOptions="actionGo"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:minHeight="56dp"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/text"
+            android:textColorHint="@color/muted"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btn_go"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/accent"
+            android:minWidth="64dp"
+            android:text="@string/home_send"
+            android:textColor="@color/on_accent" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_swap_model"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="16dp"
+            android:text="@string/swap_model_pill"
+            android:textColor="@color/text"
+            android:textSize="14sp"
+            android:textAllCaps="false" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btn_apps"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="20dp"
+            android:text="@string/home_apps"
+            android:textColor="@color/text"
+            android:textSize="14sp"
+            android:textAllCaps="false" />
+    </LinearLayout>
+</LinearLayout>
