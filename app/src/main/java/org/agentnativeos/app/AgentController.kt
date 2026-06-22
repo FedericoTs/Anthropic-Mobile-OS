@@ -12,6 +12,7 @@ import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
 import org.agentnativeos.core.model.ModelProvider
 import org.agentnativeos.core.model.ScriptedModelProvider
+import org.agentnativeos.core.undo.UndoStack
 import java.util.concurrent.Executors
 
 /**
@@ -38,6 +39,8 @@ object AgentController {
             return
         }
         AgentSession.begin()
+        val undo = UndoStack()
+        AgentSession.lastUndoStack = undo
         executor.execute {
             val bus = InMemoryEventBus()
             val audit = AuditLog()
@@ -53,6 +56,7 @@ object AgentController {
                 bus = bus,
                 clock = { System.currentTimeMillis() },
                 cancelled = { AgentSession.stopRequested },
+                undo = undo,
             )
             val result = loop.run(intent)
             Log.i(TAG, "result: $result")

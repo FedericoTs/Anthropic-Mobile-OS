@@ -56,6 +56,9 @@ class AgentLoop(
     private val clock: () -> Long = { 0L },
     private val maxSteps: Int = 25,
     private val cancelled: () -> Boolean = { false },
+    private val undo: org.agentnativeos.core.undo.UndoStack? = null,
+    private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
+        org.agentnativeos.core.undo.CompensationPlanner(gate),
 ) {
     fun run(intent: String, taskId: String = "t1"): LoopResult {
         val history = mutableListOf<AgentAction>()
@@ -130,8 +133,10 @@ class AgentLoop(
                 PolicyDecision.Allow -> Unit
             }
 
-            // 4) settling protocol — re-read the tree, verify the target survives
-            if (!settles(action)) {
+            // 4) settling protocol — re-read the tree, verify the target survives.
+            //    The fresh observation also lets us capture prior state for undo.
+            val settled = settle(action)
+            if (settled == null) {
                 val reason = "the screen changed before acting (stale target)"
                 bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
                 return LoopResult.Aborted(reason, gotAsFar, step)
@@ -149,20 +154,31 @@ class AgentLoop(
                 return LoopResult.Aborted(reason, gotAsFar, step)
             }
 
+            // 6) record how to undo this step (E2-4 compensation model)
+            undo?.record(action, compensationPlanner.compensationFor(action, priorText(action, settled)))
+
             history.add(action)
             gotAsFar = action.label()
         }
         return LoopResult.Aborted("step budget exhausted", gotAsFar, maxSteps)
     }
 
-    /** Re-read the live tree and confirm the targeted element still resolves. */
-    private fun settles(action: AgentAction): Boolean {
-        val query = when (action) {
-            is AgentAction.Tap -> action.targetQuery
-            is AgentAction.TypeText -> action.targetQuery
-            else -> return true // untargeted actions don't need element settling
-        }
+    /** Re-read the live tree; return the fresh observation if the target still
+     *  resolves (or there's no targeted element), else null to abort. */
+    private fun settle(action: AgentAction): Observation? {
         val fresh = perceiver.perceive()
-        return NodeFinder.find(fresh.root, query) != null
+        val query = targetQuery(action) ?: return fresh
+        return if (NodeFinder.find(fresh.root, query) != null) fresh else null
     }
+
+    private fun targetQuery(action: AgentAction): String? = when (action) {
+        is AgentAction.Tap -> action.targetQuery
+        is AgentAction.TypeText -> action.targetQuery
+        else -> null
+    }
+
+    private fun priorText(action: AgentAction, observation: Observation): String? =
+        (action as? AgentAction.TypeText)?.let {
+            NodeFinder.find(observation.root, it.targetQuery)?.text
+        }
 }

@@ -13,7 +13,8 @@ into these types — the same node shape the T0 spike proved it can read.
 | `events` | E2-1 | One typed `NarrationEvent` stream + `EventBus`; `AuditLog` keeps everything, `LiveFeed` coalesces + bounds (backpressure); `Correlation` (task/step/agent) on every event |
 | `action` | T4 | Fixed typed `AgentAction` schema; `UntrustedObservation` delimited channel; out-of-model `PolicyGate` that forces confirm on high-side-effect actions |
 | `model` | T1, E2-2 | `ModelProvider` seam + dual `AuthMode` (OAuth / API key); `ProviderRegistry` swap-at-next-task with non-fatal failure; `ScriptedModelProvider` for tests |
-| `loop` | T2, T3 | `AgentLoop`: perceive → plan (screen as untrusted data) → gate → settle → act → narrate; abort + transparent handoff on failure/stale target |
+| `loop` | T2, T3 | `AgentLoop`: perceive → plan (screen as untrusted data) → gate → settle → act → narrate; abort + transparent handoff on failure/stale target; cancellable (Stop) |
+| `undo` | E2-4 | `CompensationPlanner` + `UndoStack`: records how to undo each step, with an explicit irreversible barrier (you can't rewind past a sent message), unified with the policy gate's side-effect classification |
 
 ## The safety story (why the gate is outside the model)
 

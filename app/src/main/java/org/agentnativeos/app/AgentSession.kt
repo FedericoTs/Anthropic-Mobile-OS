@@ -5,6 +5,7 @@ import android.os.Looper
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.events.NarrationEvent
 import org.agentnativeos.core.loop.LoopResult
+import org.agentnativeos.core.undo.UndoStack
 import java.util.concurrent.SynchronousQueue
 
 /**
@@ -44,6 +45,10 @@ object AgentSession {
     @Volatile
     var pendingConfirm: Pair<AgentAction, String>? = null
         private set
+
+    /** The undo stack for the current/last run (E2-4) — ready for an Undo affordance. */
+    @Volatile
+    var lastUndoStack: UndoStack? = null
 
     fun setListener(l: Listener?) {
         listener = l
