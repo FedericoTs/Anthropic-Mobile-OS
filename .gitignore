@@ -1,0 +1,28 @@
+# Secrets & local config
+local.properties
+*.keystore
+*.jks
+.env
+.env.*
+
+# Android / Gradle
+.gradle/
+build/
+captures/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+release/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+
+# Gradle wrapper jar (regenerate via `gradle wrapper`; see docs/BUILD.md)
+gradle/wrapper/gradle-wrapper.jar
+
+# OS
+Thumbs.db

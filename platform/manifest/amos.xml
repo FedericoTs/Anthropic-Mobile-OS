@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AMOS local manifest (SAMPLE / TEMPLATE)
+
+  Place at: .repo/local_manifests/amos.xml inside an AOSP checkout, alongside a
+  base AOSP manifest (e.g. `repo init -u https://android.googlesource.com/platform/manifest -b android-15.0.0_rXX`).
+
+  This overlays AMOS onto AOSP:
+    1. Adds the AMOS system apps/services as projects in the build tree.
+    2. Removes the stock AOSP launcher so AMOS owns the HOME experience.
+
+  It is annotated and intentionally minimal — not a turnkey ROM. See
+  ../README.md and ../../docs/ROADMAP.md (Phase 4).
+-->
+<manifest>
+
+  <!-- Where AMOS sources are pulled from. Point this at your fork/remote. -->
+  <remote name="amos"
+          fetch="https://github.com/FedericoTs/"
+          revision="main" />
+
+  <!--
+    1) Bake the agentic shell in as a SYSTEM app.
+       In the AOSP tree, packages/apps/<Name> is the conventional home for
+       bundled apps. The shell's Android.bp (added in Phase 3/4) marks it as a
+       privileged system app so the Agent Runtime can run as a system service.
+  -->
+  <project name="anthropic-mobile-os"
+           path="packages/apps/AmosShell"
+           remote="amos"
+           revision="main" />
+
+  <!--
+    2) Remove the stock AOSP launcher so AMOS is the only HOME app.
+       Quickstep/Launcher3 is AOSP's default home; we drop it from the build.
+  -->
+  <remove-project name="platform/packages/apps/Launcher3" />
+
+  <!--
+    3) (Optional, Phase 4) microG for degoogled Play-app compatibility.
+       Add the microG GmsCore/companion projects here, or select a certified
+       GMS path instead. Left commented as a build-time choice.
+
+    <project name="microg/GmsCore"
+             path="packages/apps/GmsCore"
+             remote="..." revision="..." />
+  -->
+
+</manifest>

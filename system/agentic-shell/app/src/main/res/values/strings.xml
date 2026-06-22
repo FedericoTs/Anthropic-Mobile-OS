@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AMOS</string>
+    <string name="agent_channel_name">Agent Runtime</string>
+    <string name="agent_channel_desc">Keeps background agents running and shows what they\'re doing.</string>
+</resources>
