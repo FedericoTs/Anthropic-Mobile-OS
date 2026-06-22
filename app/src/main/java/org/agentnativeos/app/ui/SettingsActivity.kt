@@ -9,7 +9,11 @@ import androidx.appcompat.app.AppCompatActivity
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.R
 
-/** Enter / clear the Anthropic API key. Stored encrypted on-device via CredentialStore. */
+/**
+ * Configure the model credential: an Anthropic API key (the default path) and/or
+ * a Claude subscription login token. Both are stored encrypted on-device via
+ * CredentialStore; Auth.choose prefers the API key when both are present.
+ */
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var store: CredentialStore
@@ -19,10 +23,18 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
         store = CredentialStore(this)
 
-        val input = findViewById<EditText>(R.id.input_key)
+        val keyInput = findViewById<EditText>(R.id.input_key)
+        val tokenInput = findViewById<EditText>(R.id.input_token)
+
         findViewById<Button>(R.id.btn_save).setOnClickListener {
-            store.apiKey = input.text.toString()
-            input.text.clear()
+            store.apiKey = keyInput.text.toString()
+            keyInput.text.clear()
+            updateStatus()
+            toast(getString(R.string.settings_saved))
+        }
+        findViewById<Button>(R.id.btn_save_login).setOnClickListener {
+            store.oauthToken = tokenInput.text.toString()
+            tokenInput.text.clear()
             updateStatus()
             toast(getString(R.string.settings_saved))
         }
@@ -35,8 +47,15 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateStatus() {
+        val hasKey = !store.apiKey.isNullOrBlank()
+        val hasToken = !store.oauthToken.isNullOrBlank()
         findViewById<TextView>(R.id.txt_status).text = getString(
-            if (store.isConfigured) R.string.settings_configured else R.string.settings_not_configured,
+            when {
+                hasKey && hasToken -> R.string.settings_status_both
+                hasKey -> R.string.settings_status_apikey
+                hasToken -> R.string.settings_status_token
+                else -> R.string.settings_not_configured
+            },
         )
     }
 

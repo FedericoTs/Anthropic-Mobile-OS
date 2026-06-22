@@ -29,4 +29,21 @@ class CredentialStoreTest {
         assertFalse(store.isConfigured)
         assertEquals(null, CredentialStore(context).apiKey)
     }
+
+    @Test
+    fun storesPersistsAndClearsSubscriptionToken() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = CredentialStore(context)
+        store.clear()
+        assertFalse(store.isConfigured)
+
+        // A subscription token alone is enough to be "configured" (no API key).
+        store.oauthToken = "tok-test-67890"
+        assertTrue(store.isConfigured)
+        assertEquals("tok-test-67890", CredentialStore(context).oauthToken)
+
+        store.clear()
+        assertFalse(store.isConfigured)
+        assertEquals(null, CredentialStore(context).oauthToken)
+    }
 }

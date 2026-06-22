@@ -3,6 +3,7 @@ package org.agentnativeos.app.model
 import android.util.Log
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.model.ActionJson
+import org.agentnativeos.core.model.AnthropicHeaders
 import org.agentnativeos.core.model.AuthMode
 import org.agentnativeos.core.model.ModelId
 import org.agentnativeos.core.model.ModelProvider
@@ -55,13 +56,9 @@ class ClaudeModelProvider(
             doOutput = true
             connectTimeout = 15_000
             readTimeout = 30_000
-            setRequestProperty("content-type", "application/json")
-            setRequestProperty("anthropic-version", "2023-06-01")
-            when (auth) {
-                is AuthMode.ApiKey -> setRequestProperty("x-api-key", auth.key)
-                is AuthMode.SubscriptionOAuth ->
-                    setRequestProperty("authorization", "Bearer ${auth.accessToken}")
-            }
+            // Headers (incl. the auth-mode-specific credential + OAuth beta opt-in)
+            // come from the pure, unit-tested AnthropicHeaders contract.
+            AnthropicHeaders.forAuth(auth).forEach { (name, value) -> setRequestProperty(name, value) }
         }
 
         conn.outputStream.use { it.write(payload.toByteArray()) }

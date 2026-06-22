@@ -69,7 +69,8 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
     /** Start a real run against the live screen using the stored model credential. */
     private fun startRealRun(intentText: String?) {
         if (intentText.isNullOrBlank()) return
-        val auth = Auth.choose(CredentialStore(this).apiKey, null) ?: return
+        val store = CredentialStore(this)
+        val auth = Auth.choose(store.apiKey, store.oauthToken) ?: return
         AgentController.run(
             intentText,
             ClaudeModelProvider(auth),
