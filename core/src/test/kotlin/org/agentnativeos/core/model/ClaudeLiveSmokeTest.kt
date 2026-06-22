@@ -38,4 +38,27 @@ class ClaudeLiveSmokeTest {
         // A working round-trip yields a concrete plan, not the failure Abort.
         assertTrue("live model returned $action", action !is AgentAction.Abort)
     }
+
+    /** A meta-question must still produce a parseable action (a `done` answer), not prose. */
+    @Test
+    fun answersAMetaQuestionWithAnAction() {
+        val apiKey = System.getenv("ANTHROPIC_API_KEY")?.takeIf { it.isNotBlank() }
+        assumeTrue("set ANTHROPIC_API_KEY to run the live smoke test", apiKey != null)
+
+        val modelName = System.getenv("ANTHROPIC_TEST_MODEL")?.takeIf { it.isNotBlank() }
+            ?: ModelId.CHEAPEST.name
+        val provider = ClaudeModelProvider(AuthMode.ApiKey(apiKey!!), ModelId(modelName))
+
+        val action = provider.nextAction(
+            PlanningContext(
+                intent = "what can you do for me?",
+                untrustedScreen = UntrustedObservation.wrap("[home screen]"),
+                stepIndex = 0,
+            ),
+        )
+
+        // The strengthened prompt forces one JSON action even for a question, so
+        // this parses (typically Done) rather than the "couldn't parse" Abort.
+        assertTrue("meta-question returned $action", action !is AgentAction.Abort)
+    }
 }

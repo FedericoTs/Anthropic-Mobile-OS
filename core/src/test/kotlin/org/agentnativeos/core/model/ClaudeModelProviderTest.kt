@@ -29,10 +29,12 @@ class ClaudeModelProviderTest {
     }
 
     @Test
-    fun abortsOnUnparseableReply() {
+    fun abortsOnUnparseableReplyAndSurfacesTheRawText() {
         val action = providerReturning(
             HttpResponse(200, """{"content":[{"type":"text","text":"sorry, no idea"}]}"""),
         ).nextAction(ctx())
         assertTrue("expected Abort, got $action", action is AgentAction.Abort)
+        // The raw reply is echoed into the reason so a parse miss is debuggable.
+        assertTrue((action as AgentAction.Abort).reason.contains("sorry, no idea"))
     }
 }

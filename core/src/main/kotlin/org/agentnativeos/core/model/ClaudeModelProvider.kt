@@ -23,8 +23,11 @@ class ClaudeModelProvider(private val client: AnthropicClient) : ModelProvider {
 
     override fun nextAction(context: PlanningContext): AgentAction =
         try {
-            ActionJson.parse(client.complete(Prompt.system(), Prompt.user(context)))
-                ?: AgentAction.Abort("couldn't parse model output")
+            val raw = client.complete(Prompt.system(), Prompt.user(context))
+            ActionJson.parse(raw)
+                // Surface what the model actually said so a parse miss is debuggable
+                // from the narration feed itself (no logcat needed).
+                ?: AgentAction.Abort("couldn't parse model output: ${raw.trim().take(200)}")
         } catch (t: Throwable) {
             AgentAction.Abort("model unreachable: ${t.message}")
         }

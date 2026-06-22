@@ -16,6 +16,10 @@ object Prompt {
         appendLine("policy gate will ask the user before any high side-effect action, so propose such steps")
         appendLine("when appropriate but never assume they already happened.")
         appendLine()
+        appendLine("OUTPUT: reply with EXACTLY ONE JSON object and nothing else — no prose, no markdown, no")
+        appendLine("code fences. If the user is asking a question, or the task is done, or you cannot act,")
+        appendLine("""use {"action":"done","summary":"<your answer or result>"}. Never reply in plain text.""")
+        appendLine()
         append(ActionJson.SCHEMA_HINT)
     }
 
