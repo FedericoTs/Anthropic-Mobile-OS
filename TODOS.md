@@ -44,3 +44,9 @@ Captured during /plan-eng-review (2026-06-22). Each item has enough context to p
 - **Why:** Each is a strong aha amplifier but not needed for the first demo.
 - **Context:** Surface any of these for a decision when M0 is landing. Voice was deferred from M0 in the eng review.
 - **Priority:** P3.
+
+## Design system / DESIGN.md (from /plan-design-review)
+- **What:** Run `/design-consultation` to produce a DESIGN.md: type scale, color system, spacing, motion.
+- **Why:** The design review specified states + accessibility but there is no pinned visual system; without one, the type/color/spacing get reinvented per screen.
+- **Context:** Approved idle-home direction is the calm/minimal variant A (mockup in ~/.gstack/projects/.../designs/agent-home-narration-20260622/). Classified APP UI; single violet accent, no purple gradient backgrounds. Do before heavy UI implementation.
+- **Priority:** P2.
