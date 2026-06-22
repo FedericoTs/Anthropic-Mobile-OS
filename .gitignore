@@ -3,6 +3,7 @@
 
 # Android / Gradle build outputs
 .gradle/
+.kotlin/
 build/
 **/build/
 # Machine-specific SDK location (each dev sets sdk.dir here)
