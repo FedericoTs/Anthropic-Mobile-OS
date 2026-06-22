@@ -42,3 +42,9 @@
 - `/unfreeze`
 - `/gstack-upgrade`
 - `/learn`
+
+## Design System
+Always read `DESIGN.md` before making any visual or UI decisions. All fonts, colors,
+spacing, motion, components, and accessibility rules are defined there. Do not deviate
+without explicit user approval. In QA mode, flag any UI that doesn't match DESIGN.md.
+The canonical mockups live in `docs/designs/mockups/`.
