@@ -16,4 +16,11 @@
     <string name="opening">Opening %1$s…</string>
     <string name="app_not_found">Couldn’t find an app matching “%1$s”.</string>
     <string name="app_grid_title">Apps</string>
+
+    <string name="narration_title">Watch it work</string>
+    <string name="narration_stop">Stop</string>
+    <string name="confirm_caution">Needs your OK</string>
+    <string name="confirm_approve">Approve</string>
+    <string name="confirm_skip">Skip</string>
+    <string name="narration_intent_prefix">Intent: %1$s</string>
 </resources>

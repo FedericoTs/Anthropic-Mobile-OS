@@ -10,7 +10,11 @@ rc=0
 
 echo "== connected instrumented test (spike perceive guard) =="
 ./gradlew :spike:connectedDebugAndroidTest --stacktrace > "$EV/connected-test.txt" 2>&1 \
-  || echo "[suite] connected test non-zero (captured in $EV/connected-test.txt)"
+  || echo "[suite] spike connected test non-zero (captured in $EV/connected-test.txt)"
+
+echo "== app instrumented (narration feed + confirm gate) =="
+./gradlew :app:connectedDebugAndroidTest --stacktrace > "$EV/app-instrumented.txt" 2>&1 \
+  || { echo "[suite] app instrumented FAILED (see $EV/app-instrumented.txt)"; rc=1; }
 
 echo "== T0 spike matrix (Tiers 1-2) =="
 bash scripts/ci-spike-matrix.sh "$EV" || rc=1

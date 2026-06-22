@@ -29,6 +29,11 @@
             </intent-filter>
         </activity>
 
+        <!-- The trust surface: the live narration feed. -->
+        <activity
+            android:name=".ui.NarrationActivity"
+            android:exported="false" />
+
         <!-- Escape hatch: the classic app grid. -->
         <activity
             android:name=".ui.AppGridActivity"

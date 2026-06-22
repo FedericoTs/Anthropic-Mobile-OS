@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import org.agentnativeos.app.AgentController
+import org.agentnativeos.app.ui.NarrationActivity
 import org.agentnativeos.core.action.AgentAction
 
 /**
@@ -25,6 +26,14 @@ class AgentCommandReceiver : BroadcastReceiver() {
                 val script = parseScript(intent.getStringExtra(EXTRA_SCRIPT) ?: "")
                 Log.i(TAG, "RUN_SCRIPTED intent=\"$intentText\" steps=${script.size}")
                 AgentController.runScripted(intentText, script)
+            }
+            ACTION_SHOW_DEMO -> {
+                Log.i(TAG, "SHOW_DEMO")
+                context.startActivity(
+                    Intent(context, NarrationActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(NarrationActivity.EXTRA_DEMO, true),
+                )
             }
             else -> Log.w(TAG, "unknown action ${intent.action}")
         }
@@ -53,6 +62,7 @@ class AgentCommandReceiver : BroadcastReceiver() {
     companion object {
         const val TAG = "AGENT_CMD"
         const val ACTION_RUN_SCRIPTED = "org.agentnativeos.app.RUN_SCRIPTED"
+        const val ACTION_SHOW_DEMO = "org.agentnativeos.app.SHOW_DEMO"
         const val EXTRA_INTENT = "intent"
         const val EXTRA_SCRIPT = "script"
     }

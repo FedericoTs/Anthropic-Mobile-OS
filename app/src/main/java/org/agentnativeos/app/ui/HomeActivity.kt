@@ -45,6 +45,16 @@ class HomeActivity : AppCompatActivity() {
         val intent = raw.trim()
         if (intent.isEmpty()) return
 
+        // Showcase: "demo" opens the narration feed with a canned run so you can
+        // see the agent think + the confirm gate without a model configured.
+        if (intent.equals("demo", ignoreCase = true)) {
+            startActivity(
+                Intent(this, NarrationActivity::class.java)
+                    .putExtra(NarrationActivity.EXTRA_DEMO, true),
+            )
+            return
+        }
+
         // Escape hatch: "open X" launches an app directly, never trapping the user.
         if (intent.startsWith("open ", ignoreCase = true)) {
             val query = intent.substring(5).trim()

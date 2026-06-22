@@ -11,4 +11,5 @@
     <color name="accent">#D97757</color>
     <color name="accent_press">#C45F3F</color>
     <color name="on_accent">#FFFDF7</color>
+    <color name="warn">#C99A3B</color>
 </resources>

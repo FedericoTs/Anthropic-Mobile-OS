@@ -37,11 +37,13 @@ object AgentController {
             onResult(LoopResult.Aborted("agent service not enabled", "nothing yet", 0))
             return
         }
+        AgentSession.begin()
         executor.execute {
             val bus = InMemoryEventBus()
             val audit = AuditLog()
             bus.subscribe(audit)
             bus.subscribe(EventConsumer { event -> Log.i(TAG, event.audit()) })
+            bus.subscribe(EventConsumer { event -> AgentSession.emit(event) })
             val loop = AgentLoop(
                 perceiver = service,
                 provider = provider,
@@ -50,9 +52,11 @@ object AgentController {
                 confirmer = confirm,
                 bus = bus,
                 clock = { System.currentTimeMillis() },
+                cancelled = { AgentSession.stopRequested },
             )
             val result = loop.run(intent)
             Log.i(TAG, "result: $result")
+            AgentSession.finish(result)
             onResult(result)
         }
     }

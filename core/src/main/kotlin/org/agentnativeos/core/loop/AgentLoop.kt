@@ -55,6 +55,7 @@ class AgentLoop(
     private val bus: EventBus,
     private val clock: () -> Long = { 0L },
     private val maxSteps: Int = 25,
+    private val cancelled: () -> Boolean = { false },
 ) {
     fun run(intent: String, taskId: String = "t1"): LoopResult {
         val history = mutableListOf<AgentAction>()
@@ -62,6 +63,13 @@ class AgentLoop(
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
+
+            // 0) cooperative cancellation (the Stop control) — abort between steps
+            if (cancelled()) {
+                val reason = "stopped by you"
+                bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
+                return LoopResult.Aborted(reason, gotAsFar, step)
+            }
 
             // 1) perceive
             val observation = perceiver.perceive()
