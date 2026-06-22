@@ -18,6 +18,13 @@ sealed interface AgentAction {
 /** Side-effect class. The agency dial may only loosen READ_ONLY and REVERSIBLE. */
 enum class SideEffect { READ_ONLY, REVERSIBLE, IRREVERSIBLE }
 
+/** The UI element a targeted action refers to, or null for untargeted actions. */
+fun AgentAction.uiTarget(): String? = when (this) {
+    is AgentAction.Tap -> targetQuery
+    is AgentAction.TypeText -> targetQuery
+    else -> null
+}
+
 /** Human label for an action (used in narration and confirm prompts). */
 fun AgentAction.label(): String = when (this) {
     is AgentAction.Tap -> "tap \"$targetQuery\""
