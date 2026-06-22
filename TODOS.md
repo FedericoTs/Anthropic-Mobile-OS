@@ -33,10 +33,14 @@ Captured during /plan-eng-review (2026-06-22). Each item has enough context to p
 - **Context:** Needs real model-quality eval (small phone models are weaker planners). Deferred in the cherry-pick ceremony. Plugs into the ModelProvider seam built in M0.
 - **Priority:** P2 (v1.1 headline).
 
-## Multi-agent coordinator hardening (for the gated stretch goal — from /plan-ceo-review)
-- **What:** When the coordinator spawns N parallel sub-agents, define the partial-result/merge policy (1A abort+handoff generalized to N) and an N-times token-cost budget.
-- **Why:** Parallel agents multiply both the failure surface and the cost; the headline OpenClaw aha is only credible if partial failures are handled cleanly.
-- **Context:** Only relevant once multi-agent orchestration starts (gated on the single-agent loop landing first).
+## Multi-agent coordinator hardening (gated stretch — from /plan-ceo-review + eng review #2)
+- **What:** Design the coordinator as 1A (parallel planning, serialized actuation). A single device-action scheduler owns the one foreground screen; sub-agents reason in parallel; non-UI tools run parallel ONLY if they don't touch shared observable state (content-provider writes, notifications, permission dialogs are NOT parallel-safe).
+- **Stale-plan fix (required):** extend the screen-state settling protocol to the scheduler — re-validate each queued action against the live a11y tree at dequeue; on mismatch RE-PLAN the sub-agent's step (not just abort). Serializing taps does not serialize the world the taps assumed.
+- **Confirm gate with N agents:** keep the out-of-model gate per high-side-effect action; surface ONE consolidated review when multiple confirmable actions queue (no N-prompt fatigue, no lead-confirms-for-you); conflicting actions block and ask.
+- **Scheduler policy:** FIFO + per-sub-agent deadline + fairness (no starvation stalling the queue).
+- **Merge/partial-result is day-one** for multi-agent, not later; N-times token budget.
+- **Why:** Parallel agents multiply the failure surface and cost; the headline OpenClaw aha mis-taps live without the stale-plan fix.
+- **Context:** Gated on the single-agent loop landing first.
 - **Priority:** P2 (gated).
 
 ## Reserve aha candidates (parked — from /plan-ceo-review cherry-pick)
