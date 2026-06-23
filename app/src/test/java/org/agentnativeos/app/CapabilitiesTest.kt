@@ -1,6 +1,7 @@
 package org.agentnativeos.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -41,5 +42,21 @@ class CapabilitiesTest {
     fun catalogIsAdvertisedToThePlanner() {
         val names = Capabilities.CATALOG.map { it.name }
         assertEquals(true, "set_timer" in names && "open_url" in names && "dial" in names)
+    }
+
+    @Test
+    fun everyCatalogEntryHasAProbeIntent() {
+        // Discovery can only filter what it can build a probe for.
+        Capabilities.CATALOG.forEach { cap ->
+            val plan = Capabilities.probePlan(cap.name)
+            assertNotNull("no probe for ${cap.name}", plan)
+            assertEquals(true, plan!!.action.isNotBlank())
+        }
+    }
+
+    @Test
+    fun availableFromKeepsOnlyResolvedCapabilities() {
+        val available = Capabilities.availableFrom(setOf("set_timer", "dial"))
+        assertEquals(listOf("set_timer", "dial"), available.map { it.name })
     }
 }

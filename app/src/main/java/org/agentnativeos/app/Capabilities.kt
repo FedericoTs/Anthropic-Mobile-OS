@@ -103,4 +103,22 @@ object Capabilities {
 
     private fun normalizeUrl(url: String): String =
         if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+
+    /** Representative args used only to build a probe intent for resolution testing. */
+    private val PROBE_ARGS: Map<String, Map<String, String>> = mapOf(
+        "set_timer" to mapOf("seconds" to "60"),
+        "set_alarm" to mapOf("hour" to "8"),
+        "open_url" to mapOf("url" to "https://example.com"),
+        "web_search" to mapOf("query" to "x"),
+        "dial" to mapOf("number" to "0"),
+        "send_sms" to mapOf("number" to "0"),
+        "send_email" to mapOf("to" to "a@b.com"),
+    )
+
+    /** A representative plan whose action/data is used to test if the device handles a capability. */
+    fun probePlan(capability: String): IntentPlan? =
+        PROBE_ARGS[capability.lowercase().trim()]?.let { plan(capability, it) }
+
+    /** Narrow the catalog to the capabilities the device resolved as available. */
+    fun availableFrom(resolvable: Set<String>): List<Capability> = CATALOG.filter { it.name in resolvable }
 }

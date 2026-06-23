@@ -68,8 +68,8 @@ object AgentController {
                 // Let the planner launch apps directly by package instead of hunting
                 // for a (possibly localized) icon on the launcher.
                 availableApps = installedApps(service),
-                // Direct fast paths (set timer/alarm, dial, open url, search, sms/email).
-                capabilities = Capabilities.CATALOG,
+                // Direct fast paths, filtered to what THIS device can actually handle.
+                capabilities = DeviceCapabilities.discover(service),
                 // What the agent has done before — continuity + "what have you done?".
                 recentTasks = memory.recent(8),
                 cancelled = { AgentSession.stopRequested },
