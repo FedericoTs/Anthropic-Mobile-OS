@@ -12,7 +12,10 @@ import org.agentnativeos.core.action.AgentAction
  * unparseable reply returns [AgentAction.Abort], which the loop turns into a
  * transparent handoff rather than a crash.
  */
-class ClaudeModelProvider(private val client: AnthropicClient) : ModelProvider {
+class ClaudeModelProvider(
+    private val client: AnthropicClient,
+    private val maxParseAttempts: Int = 2,
+) : ModelProvider {
 
     /** Convenience: build the default (real-network) client for the given auth. */
     constructor(
@@ -21,14 +24,22 @@ class ClaudeModelProvider(private val client: AnthropicClient) : ModelProvider {
         endpoint: String = "https://api.anthropic.com/v1/messages",
     ) : this(AnthropicClient(auth, model, endpoint))
 
-    override fun nextAction(context: PlanningContext): AgentAction =
-        try {
-            val raw = client.complete(Prompt.system(), Prompt.user(context))
-            ActionJson.parse(raw)
-                // Surface what the model actually said so a parse miss is debuggable
-                // from the narration feed itself (no logcat needed).
-                ?: AgentAction.Abort("couldn't parse model output: ${raw.trim().take(200)}")
-        } catch (t: Throwable) {
-            AgentAction.Abort("model unreachable: ${t.message}")
+    override fun nextAction(context: PlanningContext): AgentAction {
+        var lastRaw = ""
+        var reminder = ""
+        repeat(maxParseAttempts) {
+            val raw = try {
+                client.complete(Prompt.system(), Prompt.user(context) + reminder)
+            } catch (t: Throwable) {
+                return AgentAction.Abort("model unreachable: ${t.message}")
+            }
+            ActionJson.parse(raw)?.let { return it }
+            // The model replied with prose instead of one JSON action — re-ask firmly
+            // rather than aborting the whole run on a single malformed turn.
+            lastRaw = raw
+            reminder = "\n\nIMPORTANT: your previous reply was not accepted. Reply with EXACTLY ONE " +
+                "JSON action object and nothing else — no prose, no markdown."
         }
+        return AgentAction.Abort("couldn't parse model output: ${lastRaw.trim().take(200)}")
+    }
 }
