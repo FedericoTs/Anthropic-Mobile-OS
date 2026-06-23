@@ -44,6 +44,27 @@ the altitude of the plan items below:
   testing (2026-06-23). Distinct from, but feeds, the capability/skill marketplace reserve.
 - **Priority:** P2 — the next capability layer; land before broad multi-app tasks.
 
+## Adaptive result UI — content-aware presentation of the agent's output (future)
+- **What:** Give the agent's RESULT its own surface that adapts to what it presents, instead
+  of the single settled "✓ summary" row it uses today. By kind: an answer/explanation as a
+  calm result block (serif lead + body, distinct from the mono thinking lines and step rows);
+  an opened link / search as a tappable chip ("Open Rome in Maps", "Spotify ▸ lo-fi beats");
+  a timer/alarm as a compact confirmation ("⧗ 5:00 running"); a plain action task stays a
+  settled ✓ — no surface where none is earned.
+- **Why:** The payoff of the whole "watch it think" arc is the result, but it currently renders
+  the same as any step row, under-serving substantive answers (capabilities list, search…).
+  This is functional clarity, not decoration, so it fits the design ethos.
+- **Design (DESIGN.md):** stay anti-ornament — "cards earn their existence", "type does the
+  work", motion clarifies never decorates; honor prefers-reduced-motion; never render secrets.
+  "Evolves with content" = content-appropriate rendering, NOT a generative canvas. Run a
+  /design-consultation pass to lock the result-surface pattern + variants against the approved
+  mockups BEFORE building — it adds a new component to the OS visual vocabulary.
+- **How:** start by inferring the result kind from the last action + the done content (no schema
+  change). A structured result type the agent emits (kind + payload) is the fuller adaptive-UI
+  version — more power, more surface area; defer unless the inferred approach proves limiting.
+- **Context:** raised 2026-06-23 after on-device runs; deferred as a planned future step.
+- **Priority:** P2 (v1 UX) — after the core capability/trust work; design pass first.
+
 ## AOSP custom-build vs Play Integrity (RESOLVED 2026-06-22 in /plan-ceo-review)
 - **What:** A custom AOSP build (Milestone 1) trips Play Integrity / hardware attestation, so Integrity-checked apps (banking, etc.) may refuse to run on it.
 - **Resolution:** Non-goal for this project. The goal is an open-source "aha" demo, not running your bank. The demo drives open / installed / web apps out of the box; Integrity-gated banking is explicitly out of scope. UnifiedAttestation is the long-term open path IF banking-class apps ever matter. No longer a blocker.
