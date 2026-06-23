@@ -31,6 +31,26 @@ class CapabilitiesTest {
     }
 
     @Test
+    fun sendEmailEncodesSubjectAndBodyIntoTheMailtoUri() {
+        // Gmail ignores EXTRA_SUBJECT/EXTRA_TEXT on a bare mailto: SENDTO, so the
+        // subject/body must live in the URI query (RFC 6068 — spaces as %20, not '+'),
+        // or the compose opens blank and "send" delivers an empty email.
+        val plan = Capabilities.plan(
+            "send_email",
+            mapOf("to" to "a@b.com", "subject" to "Excited for the OS", "body" to "we are excited!"),
+        )!!
+        assertEquals("android.intent.action.SENDTO", plan.action)
+        assertEquals(
+            "mailto:a@b.com?subject=Excited%20for%20the%20OS&body=we%20are%20excited%21",
+            plan.data,
+        )
+        assertEquals(true, plan.extras.isEmpty())
+
+        // No subject/body -> plain mailto: (still resolves for capability discovery).
+        assertEquals("mailto:a@b.com", Capabilities.plan("send_email", mapOf("to" to "a@b.com"))!!.data)
+    }
+
+    @Test
     fun unknownCapabilityOrMissingArgsIsNull() {
         assertNull(Capabilities.plan("teleport", emptyMap()))
         assertNull(Capabilities.plan("set_timer", emptyMap())) // seconds required

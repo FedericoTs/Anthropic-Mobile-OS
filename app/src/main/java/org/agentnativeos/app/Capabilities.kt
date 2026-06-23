@@ -43,7 +43,6 @@ object Capabilities {
     private const val EXTRA_ALARM_MESSAGE = "android.intent.extra.alarm.MESSAGE"
     private const val EXTRA_ALARM_SKIP_UI = "android.intent.extra.alarm.SKIP_UI"
     private const val EXTRA_QUERY = "query"
-    private const val EXTRA_SUBJECT = "android.intent.extra.SUBJECT"
     private const val EXTRA_TEXT = "android.intent.extra.TEXT"
     private const val EXTRA_SMS_BODY = "sms_body"
 
@@ -106,14 +105,15 @@ object Capabilities {
                 )
             }
             "send_email" -> req("to")?.let { to ->
-                IntentPlan(
-                    ACTION_SENDTO,
-                    data = "mailto:$to",
-                    extras = buildMap {
-                        req("subject")?.let { put(EXTRA_SUBJECT, it) }
-                        req("body")?.let { put(EXTRA_TEXT, it) }
-                    },
-                )
+                // Subject/body MUST ride in the mailto: URI (RFC 6068). Gmail (and most
+                // clients) ignore EXTRA_SUBJECT/EXTRA_TEXT when launched via SENDTO with a
+                // bare mailto:, so an extras-only plan opens a blank compose and "sends" empty.
+                val params = buildList {
+                    req("subject")?.let { add("subject=${mailtoEnc(it)}") }
+                    req("body")?.let { add("body=${mailtoEnc(it)}") }
+                }
+                val query = if (params.isEmpty()) "" else "?" + params.joinToString("&")
+                IntentPlan(ACTION_SENDTO, data = "mailto:$to$query")
             }
             "maps" -> req("query")?.let { IntentPlan(ACTION_VIEW, data = "geo:0,0?q=${enc(it)}") }
             "youtube_search" -> req("query")?.let {
@@ -148,6 +148,9 @@ object Capabilities {
         if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
 
     private fun enc(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+    /** Percent-encode for a mailto: query (RFC 6068): a space is %20, never '+'. */
+    private fun mailtoEnc(s: String): String = enc(s).replace("+", "%20")
 
     /** App-specific capabilities are only offered when their app is installed. */
     private val REQUIRED_PACKAGE: Map<String, String> = mapOf(

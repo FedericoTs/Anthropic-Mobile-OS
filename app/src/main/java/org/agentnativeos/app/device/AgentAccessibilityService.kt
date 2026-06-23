@@ -142,6 +142,8 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
 
     /** Fire a named capability as a real Android Intent (the direct, fast path). */
     private fun invoke(capability: String, args: Map<String, String>): ActionOutcome {
+        // Log only the arg KEYS, never values — a message body/recipient is user content.
+        Log.i(TAG, "invoke $capability args=${args.keys}")
         val plan = Capabilities.plan(capability, args)
             ?: return ActionOutcome(false, "unknown or invalid capability \"$capability\"")
         return try {
