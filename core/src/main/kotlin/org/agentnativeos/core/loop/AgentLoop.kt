@@ -66,6 +66,8 @@ class AgentLoop(
     private val maxStuckRepeats: Int = 3,
     /** A failed action re-plans (with the error fed back) rather than aborts, up to this many times. */
     private val maxActionRetries: Int = 3,
+    /** A blank/transitional screen re-perceives rather than planning against nothing, up to this cap. */
+    private val maxEmptyPerceives: Int = 3,
     /** Apps the planner may launch directly by package (perceived from the device). */
     private val availableApps: List<AppInfo> = emptyList(),
     /** Direct device capabilities the planner may invoke instead of driving the UI. */
@@ -98,8 +100,17 @@ class AgentLoop(
                 return LoopResult.Aborted(reason, gotAsFar, step)
             }
 
-            // 1) perceive
-            val observation = perceiver.perceive()
+            // 1) perceive — but never plan against a blank tree. A window mid-launch
+            //    (e.g. an app opening after an intent/chooser) momentarily exposes a
+            //    null/empty accessibility tree; handed nothing, the model tends to
+            //    hallucinate "done". Settle and re-read until it populates, up to a cap.
+            var observation = perceiver.perceive()
+            var emptyWaits = 0
+            while (observation.isEmpty && emptyWaits < maxEmptyPerceives) {
+                emptyWaits++
+                if (settleMs > 0) idle(settleMs)
+                observation = perceiver.perceive()
+            }
             bus.emit(
                 NarrationEvent.Perceive(
                     corr, clock(),

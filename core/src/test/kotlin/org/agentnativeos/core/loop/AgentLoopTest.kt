@@ -217,6 +217,26 @@ class AgentLoopTest {
     }
 
     @Test
+    fun blankPerceive_waitsForTheScreenToPopulateBeforePlanning() {
+        // A window mid-launch exposes a null tree; the loop must not plan against it
+        // (the model would hallucinate "done"). It re-perceives until the real screen
+        // (Battery) appears, then acts on THAT — not on the blank frame.
+        val blank = Observation("android", null, 0L)
+        val perceiver = SequencePerceiver(listOf(blank, blank, screenWith("Battery")))
+        val actuator = RecordingActuator(succeed = true)
+        val result = loop(
+            perceiver,
+            org.agentnativeos.core.model.ScriptedModelProvider(
+                listOf(AgentAction.Tap("Battery"), AgentAction.Done("opened battery")),
+            ),
+            actuator,
+        ).run("open battery")
+
+        assertTrue(result is LoopResult.Completed)
+        assertEquals(listOf(AgentAction.Tap("Battery")), actuator.performed)
+    }
+
+    @Test
     fun emptyScreenStillTerminatesViaDone() {
         val empty = Observation("com.test", FakeNode(), 0L)
         val result = loop(
