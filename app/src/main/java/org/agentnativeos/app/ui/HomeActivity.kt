@@ -62,7 +62,12 @@ class HomeActivity : AppCompatActivity() {
                 Intent(this, NarrationActivity::class.java).putExtra(NarrationActivity.EXTRA_DEMO, true),
             )
             is HomeAction.OpenApp ->
-                if (!launchByLabel(action.query)) toast(getString(R.string.app_not_found, action.query))
+                if (!launchByLabel(action.query)) {
+                    // The fast launcher missed (e.g. a localized label). If the agent
+                    // is ready, let it try the full intent instead of dead-ending.
+                    val ready = AgentAccessibilityService.instance != null && CredentialStore(this).isConfigured
+                    if (ready) launchAgent(raw) else toast(getString(R.string.app_not_found, action.query))
+                }
             HomeAction.NeedService -> {
                 toast(getString(R.string.needs_service))
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -71,13 +76,15 @@ class HomeActivity : AppCompatActivity() {
                 toast(getString(R.string.needs_model))
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
-            is HomeAction.RunAgent -> startActivity(
-                Intent(this, NarrationActivity::class.java)
-                    .putExtra(NarrationActivity.EXTRA_RUN, true)
-                    .putExtra(NarrationActivity.EXTRA_INTENT, action.intent),
-            )
+            is HomeAction.RunAgent -> launchAgent(action.intent)
         }
     }
+
+    private fun launchAgent(intent: String) = startActivity(
+        Intent(this, NarrationActivity::class.java)
+            .putExtra(NarrationActivity.EXTRA_RUN, true)
+            .putExtra(NarrationActivity.EXTRA_INTENT, intent),
+    )
 
     private fun launchByLabel(query: String): Boolean {
         val pm = packageManager

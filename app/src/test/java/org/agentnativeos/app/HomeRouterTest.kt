@@ -25,6 +25,37 @@ class HomeRouterTest {
     }
 
     @Test
+    fun multiStepOpenTaskRoutesToTheAgentNotTheLauncher() {
+        // "open <app> and <do something>" is an agent task, not a bare app launch.
+        assertEquals(
+            HomeAction.RunAgent("open the clock app and start a 5 minute timer"),
+            HomeRouter.route(
+                "open the clock app and start a 5 minute timer",
+                hasModel = true,
+                serviceEnabled = true,
+            ),
+        )
+    }
+
+    @Test
+    fun longOpenPhraseIsTreatedAsAnAgentTask() {
+        // Too many words to be an app name -> the agent, once it is ready.
+        assertEquals(
+            HomeAction.RunAgent("open my banking app and check the balance"),
+            HomeRouter.route(
+                "open my banking app and check the balance",
+                hasModel = true,
+                serviceEnabled = true,
+            ),
+        )
+        // A multi-step "open" task still gates on service/model like any agent run.
+        assertEquals(
+            HomeAction.NeedService,
+            HomeRouter.route("open clock and start a timer", hasModel = true, serviceEnabled = false),
+        )
+    }
+
+    @Test
     fun realIntentNeedsServiceThenModel() {
         assertEquals(HomeAction.NeedService, HomeRouter.route("text mom", hasModel = true, serviceEnabled = false))
         assertEquals(HomeAction.NeedModel, HomeRouter.route("text mom", hasModel = false, serviceEnabled = true))
