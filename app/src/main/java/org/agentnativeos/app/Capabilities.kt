@@ -1,6 +1,7 @@
 package org.agentnativeos.app
 
 import org.agentnativeos.core.model.Capability
+import java.net.URLEncoder
 
 /**
  * A pure, JVM-testable mapping from a named capability + string args to the Android
@@ -46,6 +47,11 @@ object Capabilities {
         Capability("dial", "Open the dialer pre-filled (does not call)", listOf("number")),
         Capability("send_sms", "Open a pre-filled SMS (does not send)", listOf("number", "body?")),
         Capability("send_email", "Open a pre-filled email (does not send)", listOf("to", "subject?", "body?")),
+        // App-specific deep links — advertised only when the app is installed (see REQUIRED_PACKAGE).
+        Capability("maps", "Show a place or directions on the map", listOf("query")),
+        Capability("youtube_search", "Search on YouTube", listOf("query")),
+        Capability("spotify_search", "Search on Spotify", listOf("query")),
+        Capability("whatsapp_message", "Open a WhatsApp chat pre-filled (does not send)", listOf("number", "text?")),
     )
 
     /** Resolve a capability + args into an [IntentPlan], or null if unknown/invalid. */
@@ -97,12 +103,36 @@ object Capabilities {
                     },
                 )
             }
+            "maps" -> req("query")?.let { IntentPlan(ACTION_VIEW, data = "geo:0,0?q=${enc(it)}") }
+            "youtube_search" -> req("query")?.let {
+                IntentPlan(ACTION_VIEW, data = "https://www.youtube.com/results?search_query=${enc(it)}")
+            }
+            "spotify_search" -> req("query")?.let {
+                IntentPlan(ACTION_VIEW, data = "https://open.spotify.com/search/${enc(it)}")
+            }
+            "whatsapp_message" -> req("number")?.let { number ->
+                val digits = number.filter { it.isDigit() }
+                val text = req("text")?.let { "?text=${enc(it)}" } ?: ""
+                IntentPlan(ACTION_VIEW, data = "https://wa.me/$digits$text")
+            }
             else -> null
         }
     }
 
     private fun normalizeUrl(url: String): String =
         if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+
+    private fun enc(s: String): String = URLEncoder.encode(s, "UTF-8")
+
+    /** App-specific capabilities are only offered when their app is installed. */
+    private val REQUIRED_PACKAGE: Map<String, String> = mapOf(
+        "youtube_search" to "com.google.android.youtube",
+        "spotify_search" to "com.spotify.music",
+        "whatsapp_message" to "com.whatsapp",
+    )
+
+    /** The package an app-specific capability needs, or null for a generic one. */
+    fun requiredPackage(capability: String): String? = REQUIRED_PACKAGE[capability.lowercase().trim()]
 
     /** Representative args used only to build a probe intent for resolution testing. */
     private val PROBE_ARGS: Map<String, Map<String, String>> = mapOf(
@@ -113,6 +143,10 @@ object Capabilities {
         "dial" to mapOf("number" to "0"),
         "send_sms" to mapOf("number" to "0"),
         "send_email" to mapOf("to" to "a@b.com"),
+        "maps" to mapOf("query" to "place"),
+        "youtube_search" to mapOf("query" to "x"),
+        "spotify_search" to mapOf("query" to "x"),
+        "whatsapp_message" to mapOf("number" to "0"),
     )
 
     /** A representative plan whose action/data is used to test if the device handles a capability. */

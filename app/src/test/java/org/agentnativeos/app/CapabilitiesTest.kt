@@ -59,4 +59,26 @@ class CapabilitiesTest {
         val available = Capabilities.availableFrom(setOf("set_timer", "dial"))
         assertEquals(listOf("set_timer", "dial"), available.map { it.name })
     }
+
+    @Test
+    fun appDeepLinksBuildTheRightUris() {
+        assertEquals("geo:0,0?q=Rome", Capabilities.plan("maps", mapOf("query" to "Rome"))!!.data)
+        assertEquals(
+            "https://www.youtube.com/results?search_query=lofi+beats",
+            Capabilities.plan("youtube_search", mapOf("query" to "lofi beats"))!!.data,
+        )
+        assertEquals(
+            "https://wa.me/391234?text=hi",
+            Capabilities.plan("whatsapp_message", mapOf("number" to "+39 1234", "text" to "hi"))!!.data,
+        )
+    }
+
+    @Test
+    fun appSpecificCapabilitiesDeclareTheirRequiredPackage() {
+        assertEquals("com.whatsapp", Capabilities.requiredPackage("whatsapp_message"))
+        assertEquals("com.spotify.music", Capabilities.requiredPackage("spotify_search"))
+        // Generic + system capabilities need no specific app.
+        assertNull(Capabilities.requiredPackage("set_timer"))
+        assertNull(Capabilities.requiredPackage("maps"))
+    }
 }

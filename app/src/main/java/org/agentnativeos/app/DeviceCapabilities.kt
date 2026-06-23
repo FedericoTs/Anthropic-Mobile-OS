@@ -28,7 +28,12 @@ object DeviceCapabilities {
         val resolvable = Capabilities.CATALOG.mapNotNull { cap ->
             val plan = Capabilities.probePlan(cap.name) ?: return@mapNotNull null
             val intent = Intent(plan.action).apply { plan.data?.let { data = Uri.parse(it) } }
-            if (pm.resolveActivity(intent, 0) != null) cap.name else null
+            val handlerExists = pm.resolveActivity(intent, 0) != null
+            // App-specific capabilities also require their app to actually be installed
+            // (an https deep link would otherwise "resolve" to the browser).
+            val requiredApp = Capabilities.requiredPackage(cap.name)
+            val appInstalled = requiredApp == null || pm.getLaunchIntentForPackage(requiredApp) != null
+            if (handlerExists && appInstalled) cap.name else null
         }.toSet()
         DeviceProfile(context).save(resolvable)
         Log.i(TAG, "device capabilities: $resolvable")
