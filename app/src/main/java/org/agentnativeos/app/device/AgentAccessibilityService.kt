@@ -5,10 +5,12 @@ import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import org.agentnativeos.app.Capabilities
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.action.ScrollDirection
 import org.agentnativeos.core.loop.ActionOutcome
@@ -61,6 +63,7 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
         is AgentAction.Tap -> tap(action.targetQuery)
         is AgentAction.TypeText -> type(action.targetQuery, action.value)
         is AgentAction.Scroll -> scroll(action.targetQuery, action.direction)
+        is AgentAction.Invoke -> invoke(action.capability, action.args)
         is AgentAction.LaunchApp -> launch(action.packageName)
         AgentAction.Back -> ActionOutcome(performGlobalAction(GLOBAL_ACTION_BACK))
         AgentAction.Home -> ActionOutcome(performGlobalAction(GLOBAL_ACTION_HOME))
@@ -135,6 +138,29 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value)
         }
         return ActionOutcome(node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args), "setText")
+    }
+
+    /** Fire a named capability as a real Android Intent (the direct, fast path). */
+    private fun invoke(capability: String, args: Map<String, String>): ActionOutcome {
+        val plan = Capabilities.plan(capability, args)
+            ?: return ActionOutcome(false, "unknown or invalid capability \"$capability\"")
+        val intent = Intent(plan.action).apply {
+            plan.data?.let { data = Uri.parse(it) }
+            plan.extras.forEach { (key, value) ->
+                when (value) {
+                    is Int -> putExtra(key, value)
+                    is Boolean -> putExtra(key, value)
+                    else -> putExtra(key, value.toString())
+                }
+            }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return try {
+            startActivity(intent)
+            ActionOutcome(true, "invoke $capability")
+        } catch (e: Exception) {
+            ActionOutcome(false, "no app handles $capability (${e.message})")
+        }
     }
 
     private fun launch(pkg: String): ActionOutcome {

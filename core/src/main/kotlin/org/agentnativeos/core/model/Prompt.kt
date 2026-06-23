@@ -24,6 +24,10 @@ object Prompt {
         appendLine("policy gate will ask the user before any high side-effect action, so propose such steps")
         appendLine("when appropriate but never assume they already happened.")
         appendLine()
+        appendLine("CAPABILITIES: when a listed fast capability matches the goal (e.g. set a timer or alarm,")
+        appendLine("dial a number, open a URL, search the web, draft an SMS/email), PREFER invoking it — one")
+        appendLine("step, far more reliable than tapping through the UI. Use screen actions only when none fit.")
+        appendLine()
         appendLine("OUTPUT: reply with EXACTLY ONE JSON object and nothing else — no prose, no markdown, no")
         appendLine("code fences. If the user is asking a question, or the task is done, or you cannot act,")
         appendLine("""use {"action":"done","summary":"<your answer or result>"}. Never reply in plain text.""")
@@ -47,6 +51,13 @@ object Prompt {
         appendLine("Step: ${context.stepIndex}")
         if (context.history.isNotEmpty()) {
             appendLine("Actions so far: ${context.history.joinToString { it.toString() }}")
+        }
+        if (context.capabilities.isNotEmpty()) {
+            appendLine("""Fast capabilities — PREFER these when one fits, with {"action":"invoke","capability":"<name>","args":{...}}:""")
+            context.capabilities.forEach { c ->
+                val ps = if (c.params.isEmpty()) "" else " — args: ${c.params.joinToString()}"
+                appendLine("- ${c.name}: ${c.description}$ps")
+            }
         }
         if (context.availableApps.isNotEmpty()) {
             appendLine("""Installed apps you can launch with {"action":"launch","package":"<package>"}:""")

@@ -23,6 +23,7 @@ object ActionJson {
         {"action":"tap","target":"<visible text>"}
         {"action":"type","target":"<field text>","text":"<value>"}
         {"action":"scroll","target":"<element>","direction":"up|down"}
+        {"action":"invoke","capability":"<name>","args":{"<key>":"<value>"}}
         {"action":"launch","package":"<package name>"}
         {"action":"back"}
         {"action":"home"}
@@ -31,7 +32,9 @@ object ActionJson {
     """.trimIndent()
 
     fun parse(raw: String): AgentAction? {
-        val m = JsonLite.parseFlatObject(raw) ?: return null
+        // The flat parser handles every action whose fields are strings. An "invoke"
+        // carries a nested args object, so fall through to the full Json parser.
+        val m = JsonLite.parseFlatObject(raw) ?: return parseInvoke(raw)
         return when (m["action"]?.lowercase()?.trim()) {
             "tap" -> m["target"]?.let { AgentAction.Tap(it) }
             "type" -> {
@@ -53,7 +56,29 @@ object ActionJson {
             "home" -> AgentAction.Home
             "done" -> AgentAction.Done(m["summary"] ?: "")
             "abort" -> AgentAction.Abort(m["reason"] ?: "")
+            "invoke" -> parseInvoke(raw) // capability with nested args
             else -> null
         }
+    }
+
+    /** Parse {"action":"invoke","capability":"x","args":{...}} via the full Json reader. */
+    private fun parseInvoke(raw: String): AgentAction? {
+        val start = raw.indexOf('{')
+        val end = raw.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        val obj = Json.parse(raw.substring(start, end + 1)) as? Map<*, *> ?: return null
+        if ((obj["action"] as? String)?.lowercase()?.trim() != "invoke") return null
+        val capability = (obj["capability"] as? String)?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val args = LinkedHashMap<String, String>()
+        (obj["args"] as? Map<*, *>)?.forEach { (k, v) ->
+            if (k != null && v != null) args[k.toString()] = scalar(v)
+        }
+        return AgentAction.Invoke(capability, args)
+    }
+
+    /** Render a JSON scalar as a clean string (300.0 -> "300"). */
+    private fun scalar(v: Any?): String = when (v) {
+        is Double -> if (v % 1.0 == 0.0) v.toLong().toString() else v.toString()
+        else -> v.toString()
     }
 }

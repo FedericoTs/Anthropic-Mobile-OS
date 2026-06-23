@@ -9,6 +9,7 @@ import org.agentnativeos.core.events.Correlation
 import org.agentnativeos.core.events.EventBus
 import org.agentnativeos.core.events.NarrationEvent
 import org.agentnativeos.core.model.AppInfo
+import org.agentnativeos.core.model.Capability
 import org.agentnativeos.core.model.ModelProvider
 import org.agentnativeos.core.model.PlanningContext
 import org.agentnativeos.core.perception.NodeFinder
@@ -67,6 +68,8 @@ class AgentLoop(
     private val maxActionRetries: Int = 3,
     /** Apps the planner may launch directly by package (perceived from the device). */
     private val availableApps: List<AppInfo> = emptyList(),
+    /** Direct device capabilities the planner may invoke instead of driving the UI. */
+    private val capabilities: List<Capability> = emptyList(),
     private val cancelled: () -> Boolean = { false },
     private val undo: org.agentnativeos.core.undo.UndoStack? = null,
     private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
@@ -110,6 +113,7 @@ class AgentLoop(
                     stepIndex = step,
                     history = history.toList(),
                     availableApps = availableApps,
+                    capabilities = capabilities,
                     lastError = lastError,
                 ),
             )

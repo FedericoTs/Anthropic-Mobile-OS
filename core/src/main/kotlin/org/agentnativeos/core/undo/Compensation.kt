@@ -54,6 +54,9 @@ class CompensationPlanner(private val gate: PolicyGate = PolicyGate()) {
             AgentAction.Home,
             is AgentAction.LaunchApp -> Compensation.Undoable(AgentAction.Back, "go back")
 
+            // A fired capability (e.g. set_timer) has no generic UI inverse.
+            is AgentAction.Invoke -> Compensation.None
+
             is AgentAction.Done, is AgentAction.Abort -> Compensation.None
         }
     }

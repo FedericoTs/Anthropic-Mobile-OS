@@ -10,6 +10,15 @@ sealed interface AgentAction {
     data class TypeText(val targetQuery: String, val value: String) : AgentAction
     data class Scroll(val targetQuery: String, val direction: ScrollDirection) : AgentAction
     data class LaunchApp(val packageName: String) : AgentAction
+
+    /**
+     * Invoke a named device capability directly (e.g. set_timer, dial, open_url)
+     * instead of driving the UI — faster and more reliable. The capability set is a
+     * fixed allow-list resolved on-device; the model can only name a capability, not
+     * synthesize an arbitrary system intent (the structural injection defense holds).
+     */
+    data class Invoke(val capability: String, val args: Map<String, String> = emptyMap()) : AgentAction
+
     data object Back : AgentAction
     data object Home : AgentAction
     data class Done(val summary: String) : AgentAction
@@ -36,6 +45,7 @@ fun AgentAction.label(): String = when (this) {
     is AgentAction.TypeText -> "type into \"$targetQuery\""
     is AgentAction.Scroll -> "scroll ${direction.name.lowercase()} on \"$targetQuery\""
     is AgentAction.LaunchApp -> "open $packageName"
+    is AgentAction.Invoke -> "use $capability"
     AgentAction.Back -> "go back"
     AgentAction.Home -> "go home"
     is AgentAction.Done -> "finish"

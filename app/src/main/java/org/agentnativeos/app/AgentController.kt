@@ -65,6 +65,8 @@ object AgentController {
                 // Let the planner launch apps directly by package instead of hunting
                 // for a (possibly localized) icon on the launcher.
                 availableApps = installedApps(service),
+                // Direct fast paths (set timer/alarm, dial, open url, search, sms/email).
+                capabilities = Capabilities.CATALOG,
                 cancelled = { AgentSession.stopRequested },
                 undo = undo,
             )

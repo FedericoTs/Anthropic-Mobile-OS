@@ -22,6 +22,8 @@ class PolicyGate(
             if (looksHighRisk(action.targetQuery)) SideEffect.IRREVERSIBLE else SideEffect.REVERSIBLE
         is AgentAction.TypeText -> SideEffect.REVERSIBLE
         is AgentAction.Scroll -> SideEffect.REVERSIBLE
+        is AgentAction.Invoke ->
+            if (action.capability.lowercase() in HIGH_RISK_CAPABILITIES) SideEffect.IRREVERSIBLE else SideEffect.REVERSIBLE
         is AgentAction.LaunchApp, AgentAction.Back, AgentAction.Home -> SideEffect.READ_ONLY
         is AgentAction.Done, is AgentAction.Abort -> SideEffect.READ_ONLY
     }
@@ -37,6 +39,9 @@ class PolicyGate(
         highRiskWords.any { s.contains(it, ignoreCase = true) }
 
     companion object {
+        /** Capabilities that auto-commit (place a call, send now) require confirmation. */
+        val HIGH_RISK_CAPABILITIES = setOf("call", "place_call", "send_now", "pay")
+
         val DEFAULT_HIGH_RISK = listOf(
             "send", "pay", "transfer", "confirm", "delete", "remove", "buy",
             "purchase", "checkout", "place order", "submit", "withdraw", "wire",

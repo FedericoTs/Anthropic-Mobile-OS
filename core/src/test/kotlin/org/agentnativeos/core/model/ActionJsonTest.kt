@@ -29,6 +29,11 @@ class ActionJsonTest {
             ActionJson.parse("""{"action":"scroll","target":"list","direction":"DOWN"}"""),
         )
         assertNull(ActionJson.parse("""{"action":"scroll","target":"x","direction":"sideways"}"""))
+        assertEquals(
+            AgentAction.Invoke("set_timer", mapOf("seconds" to "300", "message" to "tea")),
+            ActionJson.parse("""{"action":"invoke","capability":"set_timer","args":{"seconds":300,"message":"tea"}}"""),
+        )
+        assertNull(ActionJson.parse("""{"action":"invoke","args":{"x":"y"}}""")) // missing capability
         assertEquals(AgentAction.Back, ActionJson.parse("""{"action":"back"}"""))
         assertEquals(AgentAction.Home, ActionJson.parse("""{"action":"home"}"""))
         assertEquals(AgentAction.Done("opened"), ActionJson.parse("""{"action":"done","summary":"opened"}"""))

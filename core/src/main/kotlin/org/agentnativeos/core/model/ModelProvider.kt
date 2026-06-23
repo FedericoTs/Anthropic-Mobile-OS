@@ -32,6 +32,9 @@ data class ModelId(val name: String) {
 /** A launchable app the agent can open directly by package (perceived from the device). */
 data class AppInfo(val label: String, val packageName: String)
 
+/** A direct device capability the agent can invoke instead of driving the UI. */
+data class Capability(val name: String, val description: String, val params: List<String> = emptyList())
+
 /** What the planner sees each step: the intent + the screen as untrusted data. */
 data class PlanningContext(
     val intent: String,
@@ -39,6 +42,7 @@ data class PlanningContext(
     val stepIndex: Int,
     val history: List<AgentAction> = emptyList(),
     val availableApps: List<AppInfo> = emptyList(),
+    val capabilities: List<Capability> = emptyList(),
     /** The previous attempt's failure, if any, so the model can try something else. */
     val lastError: String? = null,
 )
