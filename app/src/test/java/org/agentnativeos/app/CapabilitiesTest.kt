@@ -74,6 +74,22 @@ class CapabilitiesTest {
     }
 
     @Test
+    fun calendarShareAndCameraBuildCorrectPlans() {
+        val event = Capabilities.plan("create_event", mapOf("title" to "Standup", "location" to "Room 4"))!!
+        assertEquals("android.intent.action.INSERT", event.action)
+        assertEquals("content://com.android.calendar/events", event.data)
+        assertEquals("Standup", event.extras["title"])
+        assertEquals("Room 4", event.extras["eventLocation"])
+
+        val share = Capabilities.plan("share_text", mapOf("text" to "hello"))!!
+        assertEquals("text/plain", share.type)
+        assertEquals("hello", share.extras["android.intent.extra.TEXT"])
+
+        // Camera needs no args.
+        assertEquals("android.media.action.STILL_IMAGE_CAMERA", Capabilities.plan("open_camera", emptyMap())!!.action)
+    }
+
+    @Test
     fun appSpecificCapabilitiesDeclareTheirRequiredPackage() {
         assertEquals("com.whatsapp", Capabilities.requiredPackage("whatsapp_message"))
         assertEquals("com.spotify.music", Capabilities.requiredPackage("spotify_search"))

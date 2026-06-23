@@ -16,6 +16,7 @@ import java.net.URLEncoder
 data class IntentPlan(
     val action: String,
     val data: String? = null,
+    val type: String? = null,
     val extras: Map<String, Any> = emptyMap(),
 )
 
@@ -28,6 +29,14 @@ object Capabilities {
     private const val ACTION_WEB_SEARCH = "android.intent.action.WEB_SEARCH"
     private const val ACTION_DIAL = "android.intent.action.DIAL"
     private const val ACTION_SENDTO = "android.intent.action.SENDTO"
+    private const val ACTION_INSERT = "android.intent.action.INSERT"
+    private const val ACTION_SEND = "android.intent.action.SEND"
+    private const val ACTION_CAMERA = "android.media.action.STILL_IMAGE_CAMERA"
+    private const val EVENTS_URI = "content://com.android.calendar/events"
+    private const val EXTRA_EVENT_TITLE = "title"
+    private const val EXTRA_EVENT_DESC = "description"
+    private const val EXTRA_EVENT_LOCATION = "eventLocation"
+    private const val TYPE_TEXT = "text/plain"
     private const val EXTRA_TIMER_LENGTH = "android.intent.extra.alarm.LENGTH"
     private const val EXTRA_ALARM_HOUR = "android.intent.extra.alarm.HOUR"
     private const val EXTRA_ALARM_MINUTES = "android.intent.extra.alarm.MINUTES"
@@ -52,6 +61,9 @@ object Capabilities {
         Capability("youtube_search", "Search on YouTube", listOf("query")),
         Capability("spotify_search", "Search on Spotify", listOf("query")),
         Capability("whatsapp_message", "Open a WhatsApp chat pre-filled (does not send)", listOf("number", "text?")),
+        Capability("create_event", "Open a new calendar event pre-filled (does not save)", listOf("title", "description?", "location?")),
+        Capability("share_text", "Share text via the system share sheet", listOf("text")),
+        Capability("open_camera", "Open the camera", emptyList()),
     )
 
     /** Resolve a capability + args into an [IntentPlan], or null if unknown/invalid. */
@@ -115,6 +127,19 @@ object Capabilities {
                 val text = req("text")?.let { "?text=${enc(it)}" } ?: ""
                 IntentPlan(ACTION_VIEW, data = "https://wa.me/$digits$text")
             }
+            "create_event" -> req("title")?.let { title ->
+                IntentPlan(
+                    ACTION_INSERT,
+                    data = EVENTS_URI,
+                    extras = buildMap {
+                        put(EXTRA_EVENT_TITLE, title)
+                        req("description")?.let { put(EXTRA_EVENT_DESC, it) }
+                        req("location")?.let { put(EXTRA_EVENT_LOCATION, it) }
+                    },
+                )
+            }
+            "share_text" -> req("text")?.let { IntentPlan(ACTION_SEND, type = TYPE_TEXT, extras = mapOf(EXTRA_TEXT to it)) }
+            "open_camera" -> IntentPlan(ACTION_CAMERA)
             else -> null
         }
     }
@@ -147,6 +172,9 @@ object Capabilities {
         "youtube_search" to mapOf("query" to "x"),
         "spotify_search" to mapOf("query" to "x"),
         "whatsapp_message" to mapOf("number" to "0"),
+        "create_event" to mapOf("title" to "x"),
+        "share_text" to mapOf("text" to "x"),
+        "open_camera" to emptyMap(),
     )
 
     /** A representative plan whose action/data is used to test if the device handles a capability. */

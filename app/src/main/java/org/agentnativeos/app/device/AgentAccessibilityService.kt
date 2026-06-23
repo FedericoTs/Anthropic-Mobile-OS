@@ -5,12 +5,12 @@ import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import org.agentnativeos.app.Capabilities
+import org.agentnativeos.app.intentFor
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.action.ScrollDirection
 import org.agentnativeos.core.loop.ActionOutcome
@@ -144,19 +144,8 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
     private fun invoke(capability: String, args: Map<String, String>): ActionOutcome {
         val plan = Capabilities.plan(capability, args)
             ?: return ActionOutcome(false, "unknown or invalid capability \"$capability\"")
-        val intent = Intent(plan.action).apply {
-            plan.data?.let { data = Uri.parse(it) }
-            plan.extras.forEach { (key, value) ->
-                when (value) {
-                    is Int -> putExtra(key, value)
-                    is Boolean -> putExtra(key, value)
-                    else -> putExtra(key, value.toString())
-                }
-            }
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
         return try {
-            startActivity(intent)
+            startActivity(intentFor(plan))
             ActionOutcome(true, "invoke $capability")
         } catch (e: Exception) {
             ActionOutcome(false, "no app handles $capability (${e.message})")

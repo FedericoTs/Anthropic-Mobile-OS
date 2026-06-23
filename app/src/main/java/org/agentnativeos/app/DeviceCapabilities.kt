@@ -27,8 +27,7 @@ object DeviceCapabilities {
         val pm = context.packageManager
         val resolvable = Capabilities.CATALOG.mapNotNull { cap ->
             val plan = Capabilities.probePlan(cap.name) ?: return@mapNotNull null
-            val intent = Intent(plan.action).apply { plan.data?.let { data = Uri.parse(it) } }
-            val handlerExists = pm.resolveActivity(intent, 0) != null
+            val handlerExists = pm.resolveActivity(intentFor(plan), 0) != null
             // App-specific capabilities also require their app to actually be installed
             // (an https deep link would otherwise "resolve" to the browser).
             val requiredApp = Capabilities.requiredPackage(cap.name)
@@ -39,6 +38,23 @@ object DeviceCapabilities {
         Log.i(TAG, "device capabilities: $resolvable")
         return Capabilities.availableFrom(resolvable)
     }
+}
+
+/** Build the real Android Intent for a capability plan (used to probe AND to fire it). */
+fun intentFor(plan: IntentPlan): Intent = Intent(plan.action).apply {
+    when {
+        plan.data != null && plan.type != null -> setDataAndType(Uri.parse(plan.data), plan.type)
+        plan.data != null -> data = Uri.parse(plan.data)
+        plan.type != null -> type = plan.type
+    }
+    plan.extras.forEach { (key, value) ->
+        when (value) {
+            is Int -> putExtra(key, value)
+            is Boolean -> putExtra(key, value)
+            else -> putExtra(key, value.toString())
+        }
+    }
+    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 }
 
 /** The cached device capability profile (plain prefs; not a secret). */
