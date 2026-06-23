@@ -44,6 +44,19 @@ the altitude of the plan items below:
   testing (2026-06-23). Distinct from, but feeds, the capability/skill marketplace reserve.
 - **Priority:** P2 — the next capability layer; land before broad multi-app tasks.
 
+## Semantic high-risk classifier for the policy gate (v1)
+- **What:** Replace the gate's localized keyword list with a model-based (or richer) risk
+  classifier so "is this action irreversible/financial/identity" doesn't depend on matching
+  a word in the right language. v0 ships a multilingual keyword list (EN/IT/ES/FR/DE/PT);
+  it covers the common cases but a keyword match is brittle (false positives like "ordina" in
+  "coordina"; misses for unlisted languages/phrasings).
+- **Why:** The confirm gate is the safety centerpiece ("trust"); it must not fail open on a
+  localized device. The keyword list is the v0 stopgap; a classifier is the durable fix.
+- **Context:** raised 2026-06-23 — the test phone is Italian and the original list was
+  English-only, so destructive buttons ("Invia"/"Paga"/"Elimina") weren't gated. Keep the
+  classifier OUT of the model loop (the gate must stay an out-of-model check vs injection).
+- **Priority:** P2 (v1 trust).
+
 ## Persistent narration overlay — watch it act over other apps (future)
 - **What:** Today the agent backgrounds the Agent OS app whenever it acts in another app,
   so you can't watch the narration during the act — the core "I can watch it think, so I

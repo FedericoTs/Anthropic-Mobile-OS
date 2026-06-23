@@ -42,9 +42,33 @@ class PolicyGate(
         /** Capabilities that auto-commit (place a call, send now) require confirmation. */
         val HIGH_RISK_CAPABILITIES = setOf("call", "place_call", "send_now", "pay")
 
+        /**
+         * High-side-effect words that force a confirm. The agent acts on localized UIs, so an
+         * English-only list silently fails open on a non-English phone (a "send"/"pay"/"delete"
+         * button labelled "Invia"/"Paga"/"Elimina" would never be gated). We cover the common
+         * destructive/financial verbs across the major Latin-script locales. Substring match,
+         * lowercase. (A model-based risk classifier is the v1 upgrade — see TODOS.)
+         */
         val DEFAULT_HIGH_RISK = listOf(
+            // English
             "send", "pay", "transfer", "confirm", "delete", "remove", "buy",
-            "purchase", "checkout", "place order", "submit", "withdraw", "wire",
+            "purchase", "checkout", "place order", "order now", "submit", "withdraw", "wire",
+            // Italian
+            "invia", "inviare", "paga", "pagare", "pagamento", "bonifico", "trasferisci",
+            "conferma", "confermare", "elimina", "eliminare", "rimuovi", "cancella",
+            "acquista", "acquistare", "compra", "ordina", "preleva", "prelievo",
+            // Spanish
+            "enviar", "envía", "pagar", "pago", "transferir", "transferencia", "confirmar",
+            "eliminar", "borrar", "comprar", "pedir", "retirar",
+            // French
+            "envoyer", "envoie", "payer", "paiement", "transférer", "virement", "confirmer",
+            "supprimer", "effacer", "acheter", "commander", "retirer",
+            // German
+            "senden", "zahlen", "bezahlen", "überweisen", "überweisung", "bestätigen",
+            "löschen", "entfernen", "kaufen", "bestellen", "abheben",
+            // Portuguese
+            "enviar", "envia", "pagar", "pagamento", "transferir", "confirmar",
+            "excluir", "apagar", "comprar", "encomendar", "sacar",
         )
     }
 }
