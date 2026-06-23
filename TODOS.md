@@ -2,6 +2,48 @@
 
 Captured during /plan-eng-review (2026-06-22). Each item has enough context to pick up cold.
 
+## Shipped since — M0 live on real hardware (2026-06-23)
+Single-agent loop proven end-to-end on a real device (Xiaomi/MIUI, Italian locale):
+a calculator task and a one-shot timer via the fast path. Built this session, below
+the altitude of the plan items below:
+- Dual auth (API key + bring-your-own Claude subscription token) + model catalog with
+  per-task selection (default = cheapest, Haiku 4.5).
+- Live planner in pure :core (AnthropicClient + tiny Json) — round-trip unit-tested
+  plus a gated live smoke test; added INTERNET + SET_ALARM permissions.
+- Action set grown: `scroll` (wheel pickers / lists) and `invoke` — a direct-intent
+  fast path (set_timer/alarm, dial, open_url, web_search, sms/email) that does known
+  tasks in ONE action instead of UI-driving.
+- Robustness: settle-after-act, re-plan on stale target, stuck-detection, re-plan on a
+  failed action (error fed back), re-ask on a prose (non-JSON) reply.
+- Perception upgraded to a structured, role-tagged screen (text AND contentDescription;
+  partially addresses the a11y-tree budget item below).
+- App inventory (launch by package) + agent memory (durable task history, fed back into
+  planning and shown on the home screen).
+
+## Device Adaptation — capability discovery ("scan the phone", from on-device testing)
+- **What:** On install / first-run (and on package changes) probe the actual device to
+  build an adaptive capability profile instead of a hardcoded catalog: which fast-path
+  intents actually resolve here, which apps are installed + their entry points, and
+  (later) app deep-links / shortcuts. Advertise to the planner only what THIS device can
+  do, and cache the profile (a form of device memory).
+- **Why:** The capability catalog is static today; on another ROM/locale some capabilities
+  have no handler (no mail app, no maps) and advertising dead ones wastes steps. This is
+  the layer that makes the OS agent-native on ANY phone — and it feeds the parked open
+  capability/skill marketplace.
+- **Design / caveats (do not skip):**
+  - Probe with `PackageManager.resolveActivity` per representative intent — BUT Android 11+
+    package visibility hides handlers unless the queried intents are declared in `<queries>`
+    (avoid `QUERY_ALL_PACKAGES`). A naive probe yields false negatives and would wrongly drop
+    working capabilities, so discovery REQUIRES matching `<queries>` entries designed with it.
+  - Permissions are a SEPARATE axis: SET_ALARM was a permission, not a missing handler.
+    Resolution proves a handler exists, not that we're allowed to call it.
+  - Cache the device profile (prefs/file via the Json codec); refresh on PACKAGE_ADDED/REMOVED.
+  - Security: discovery only probes + advertises; never auto-invoke while probing. Keep the
+    fixed allow-list shape — the model names a capability; the device resolves it.
+- **Context:** Realizes the "adapt natively to the device" idea raised during on-device
+  testing (2026-06-23). Distinct from, but feeds, the capability/skill marketplace reserve.
+- **Priority:** P2 — the next capability layer; land before broad multi-app tasks.
+
 ## AOSP custom-build vs Play Integrity (RESOLVED 2026-06-22 in /plan-ceo-review)
 - **What:** A custom AOSP build (Milestone 1) trips Play Integrity / hardware attestation, so Integrity-checked apps (banking, etc.) may refuse to run on it.
 - **Resolution:** Non-goal for this project. The goal is an open-source "aha" demo, not running your bank. The demo drives open / installed / web apps out of the box; Integrity-gated banking is explicitly out of scope. UnifiedAttestation is the long-term open path IF banking-class apps ever matter. No longer a blocker.
