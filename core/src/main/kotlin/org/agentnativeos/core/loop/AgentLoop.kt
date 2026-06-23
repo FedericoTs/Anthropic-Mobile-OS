@@ -8,6 +8,7 @@ import org.agentnativeos.core.action.label
 import org.agentnativeos.core.events.Correlation
 import org.agentnativeos.core.events.EventBus
 import org.agentnativeos.core.events.NarrationEvent
+import org.agentnativeos.core.model.AppInfo
 import org.agentnativeos.core.model.ModelProvider
 import org.agentnativeos.core.model.PlanningContext
 import org.agentnativeos.core.perception.NodeFinder
@@ -60,6 +61,10 @@ class AgentLoop(
     private val idle: (Long) -> Unit = {},
     /** A stale target re-plans rather than aborts, up to this many times in a row. */
     private val maxStaleReplans: Int = 3,
+    /** The same action executed this many times in a row with no progress => stop (stuck). */
+    private val maxStuckRepeats: Int = 3,
+    /** Apps the planner may launch directly by package (perceived from the device). */
+    private val availableApps: List<AppInfo> = emptyList(),
     private val cancelled: () -> Boolean = { false },
     private val undo: org.agentnativeos.core.undo.UndoStack? = null,
     private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
@@ -69,6 +74,8 @@ class AgentLoop(
         val history = mutableListOf<AgentAction>()
         var gotAsFar = "nothing yet"
         var staleStreak = 0
+        var lastActedLabel: String? = null
+        var actedRepeats = 0
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
@@ -98,6 +105,7 @@ class AgentLoop(
                     untrustedScreen = UntrustedObservation.wrap(NodeFinder.visibleText(observation.root)),
                     stepIndex = step,
                     history = history.toList(),
+                    availableApps = availableApps,
                 ),
             )
 
@@ -168,6 +176,21 @@ class AgentLoop(
                 return LoopResult.Aborted(reason, gotAsFar, step)
             }
             staleStreak = 0
+
+            // 5b) stuck detection — the same action acted repeatedly without the
+            //     screen progressing means we're in a loop (e.g. tapping Cancel on a
+            //     dialog that keeps reappearing). Stop and hand off rather than spin.
+            if (action.label() == lastActedLabel) {
+                actedRepeats++
+                if (actedRepeats >= maxStuckRepeats) {
+                    val reason = "stuck repeating ${action.label()} without progress"
+                    bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
+                    return LoopResult.Aborted(reason, gotAsFar, step)
+                }
+            } else {
+                actedRepeats = 1
+                lastActedLabel = action.label()
+            }
 
             // 6) record how to undo this step (E2-4 compensation model)
             undo?.record(action, compensationPlanner.compensationFor(action, priorText(action, settled)))

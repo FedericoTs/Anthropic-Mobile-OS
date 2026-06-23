@@ -112,6 +112,23 @@ class AgentLoopTest {
     }
 
     @Test
+    fun stuckDetection_abortsWhenRepeatingTheSameActionWithoutProgress() {
+        // The screen never changes and the model keeps proposing the same tap;
+        // the loop must give up after a few repeats instead of spinning to budget.
+        val actuator = RecordingActuator(succeed = true)
+        val result = loop(
+            StaticPerceiver(screenWith("Annulla")),
+            org.agentnativeos.core.model.ModelProvider { AgentAction.Tap("Annulla") },
+            actuator,
+        ).run("dismiss it")
+
+        assertTrue(result is LoopResult.Aborted)
+        assertTrue((result as LoopResult.Aborted).reason.contains("stuck"))
+        // It stopped well short of the 25-step budget.
+        assertTrue("should bail after a few repeats", actuator.performed.size <= 4)
+    }
+
+    @Test
     fun highSideEffect_requiresConfirm_approvedProceeds() {
         val actuator = RecordingActuator(succeed = true)
         val audit = AuditLog()

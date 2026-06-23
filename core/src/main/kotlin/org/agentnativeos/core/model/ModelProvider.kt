@@ -29,12 +29,16 @@ data class ModelId(val name: String) {
     }
 }
 
+/** A launchable app the agent can open directly by package (perceived from the device). */
+data class AppInfo(val label: String, val packageName: String)
+
 /** What the planner sees each step: the intent + the screen as untrusted data. */
 data class PlanningContext(
     val intent: String,
     val untrustedScreen: String,
     val stepIndex: Int,
     val history: List<AgentAction> = emptyList(),
+    val availableApps: List<AppInfo> = emptyList(),
 )
 
 /** The planner seam: given context, return the next typed action. */
