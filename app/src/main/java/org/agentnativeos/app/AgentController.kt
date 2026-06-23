@@ -55,6 +55,11 @@ object AgentController {
                 confirmer = confirm,
                 bus = bus,
                 clock = { System.currentTimeMillis() },
+                // Real devices animate: wait after each action so the next perceive
+                // reads the settled screen (e.g. the launcher after "home"), not a
+                // transitional one — and re-plan if a target goes stale mid-flight.
+                settleMs = 800L,
+                idle = { ms -> try { Thread.sleep(ms) } catch (_: InterruptedException) {} },
                 cancelled = { AgentSession.stopRequested },
                 undo = undo,
             )

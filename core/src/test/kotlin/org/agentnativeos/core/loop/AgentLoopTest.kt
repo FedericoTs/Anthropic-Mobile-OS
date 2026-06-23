@@ -70,22 +70,45 @@ class AgentLoopTest {
     }
 
     @Test
-    fun settlingProtocol_abortsOnStaleTarget() {
-        // Target present at perceive, gone when we re-read just before acting.
+    fun settlingProtocol_replansOnStaleTargetInsteadOfActing() {
+        // Battery is present at plan time but gone at the pre-act re-read; the loop
+        // must NOT act on it, but instead re-plan against the fresh screen (Wi-Fi).
         val perceiver = SequencePerceiver(
-            listOf(screenWith("Battery"), screenWith("Wi-Fi")),
+            listOf(screenWith("Battery"), screenWith("Wi-Fi")), // last frame repeats
         )
         val actuator = RecordingActuator(succeed = true)
         val result = loop(
             perceiver,
-            org.agentnativeos.core.model.ScriptedModelProvider(listOf(AgentAction.Tap("Battery"))),
+            org.agentnativeos.core.model.ScriptedModelProvider(
+                listOf(AgentAction.Tap("Battery"), AgentAction.Tap("Wi-Fi")),
+            ),
+            actuator,
+        ).run("open settings")
+
+        assertTrue(result is LoopResult.Completed)
+        // It recovered: it acted only on the live target, never on the stale one.
+        assertEquals(listOf(AgentAction.Tap("Wi-Fi")), actuator.performed)
+    }
+
+    @Test
+    fun settlingProtocol_abortsAfterRepeatedStaleTargets() {
+        // The target is stale on every re-read (plan sees Battery, settle sees Gone),
+        // so re-planning can't recover -> abort after the cap, never acting.
+        val perceiver = object : Perceiver {
+            private var n = 0
+            override fun perceive(): Observation =
+                if (n++ % 2 == 0) screenWith("Battery") else screenWith("Gone")
+        }
+        val actuator = RecordingActuator(succeed = true)
+        val result = loop(
+            perceiver,
+            org.agentnativeos.core.model.ModelProvider { AgentAction.Tap("Battery") },
             actuator,
         ).run("open battery")
 
         assertTrue(result is LoopResult.Aborted)
-        result as LoopResult.Aborted
-        assertTrue(result.reason.contains("stale target"))
-        assertTrue("must NOT act on a stale target", actuator.performed.isEmpty())
+        assertTrue((result as LoopResult.Aborted).reason.contains("stale target"))
+        assertTrue("must NEVER act on a stale target", actuator.performed.isEmpty())
     }
 
     @Test

@@ -55,6 +55,11 @@ class AgentLoop(
     private val bus: EventBus,
     private val clock: () -> Long = { 0L },
     private val maxSteps: Int = 25,
+    /** Pause after each action so an async screen transition settles before the next perceive. */
+    private val settleMs: Long = 0,
+    private val idle: (Long) -> Unit = {},
+    /** A stale target re-plans rather than aborts, up to this many times in a row. */
+    private val maxStaleReplans: Int = 3,
     private val cancelled: () -> Boolean = { false },
     private val undo: org.agentnativeos.core.undo.UndoStack? = null,
     private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
@@ -63,6 +68,7 @@ class AgentLoop(
     fun run(intent: String, taskId: String = "t1"): LoopResult {
         val history = mutableListOf<AgentAction>()
         var gotAsFar = "nothing yet"
+        var staleStreak = 0
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
@@ -137,6 +143,14 @@ class AgentLoop(
             //    The fresh observation also lets us capture prior state for undo.
             val settled = settle(action)
             if (settled == null) {
+                // Never act on a stale target. Rather than give up on a transient
+                // screen change (e.g. an async navigation still animating), let the
+                // screen settle and re-plan against the fresh tree — up to a cap.
+                if (staleStreak < maxStaleReplans) {
+                    staleStreak++
+                    if (settleMs > 0) idle(settleMs)
+                    continue
+                }
                 val reason = "the screen changed before acting (stale target)"
                 bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
                 return LoopResult.Aborted(reason, gotAsFar, step)
@@ -153,12 +167,16 @@ class AgentLoop(
                 bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
                 return LoopResult.Aborted(reason, gotAsFar, step)
             }
+            staleStreak = 0
 
             // 6) record how to undo this step (E2-4 compensation model)
             undo?.record(action, compensationPlanner.compensationFor(action, priorText(action, settled)))
 
             history.add(action)
             gotAsFar = action.label()
+
+            // 7) let an async screen transition settle before the next perceive.
+            if (settleMs > 0) idle(settleMs)
         }
         return LoopResult.Aborted("step budget exhausted", gotAsFar, maxSteps)
     }
