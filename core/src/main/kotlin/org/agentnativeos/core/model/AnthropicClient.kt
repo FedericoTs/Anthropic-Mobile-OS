@@ -42,7 +42,9 @@ class AnthropicClient(
     private val auth: AuthMode,
     private val model: ModelId = ModelId.DEFAULT,
     private val endpoint: String = "https://api.anthropic.com/v1/messages",
-    private val maxTokens: Int = 256,
+    // Action JSON is tiny, but a "done" summary can be long; 256 truncated verbose
+    // answers mid-string, breaking JSON parsing. 1024 leaves ample room (cheap on Haiku).
+    private val maxTokens: Int = 1024,
     private val transport: HttpTransport = UrlHttpTransport,
 ) {
     /** One system + user turn. Returns the assistant's text; throws on HTTP error. */

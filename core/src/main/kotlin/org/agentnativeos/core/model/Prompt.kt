@@ -31,6 +31,7 @@ object Prompt {
         appendLine("OUTPUT: reply with EXACTLY ONE JSON object and nothing else — no prose, no markdown, no")
         appendLine("code fences. If the user is asking a question, or the task is done, or you cannot act,")
         appendLine("""use {"action":"done","summary":"<your answer or result>"}. Never reply in plain text.""")
+        appendLine("Keep the summary concise (a few sentences); the JSON must be complete and well-formed.")
         appendLine()
         appendLine("SCREEN: each line is one on-screen element tagged by how you use it — [tap] = tappable,")
         appendLine("[input] = editable text field, [text] = static label. Only target labels you can see in")
