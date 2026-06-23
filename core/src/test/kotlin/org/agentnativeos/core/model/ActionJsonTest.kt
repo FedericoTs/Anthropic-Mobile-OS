@@ -1,6 +1,7 @@
 package org.agentnativeos.core.model
 
 import org.agentnativeos.core.action.AgentAction
+import org.agentnativeos.core.action.ScrollDirection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -19,6 +20,15 @@ class ActionJsonTest {
             AgentAction.LaunchApp("com.android.settings"),
             ActionJson.parse("""{"action":"launch","package":"com.android.settings"}"""),
         )
+        assertEquals(
+            AgentAction.Scroll("minutes", ScrollDirection.UP),
+            ActionJson.parse("""{"action":"scroll","target":"minutes","direction":"up"}"""),
+        )
+        assertEquals(
+            AgentAction.Scroll("list", ScrollDirection.DOWN),
+            ActionJson.parse("""{"action":"scroll","target":"list","direction":"DOWN"}"""),
+        )
+        assertNull(ActionJson.parse("""{"action":"scroll","target":"x","direction":"sideways"}"""))
         assertEquals(AgentAction.Back, ActionJson.parse("""{"action":"back"}"""))
         assertEquals(AgentAction.Home, ActionJson.parse("""{"action":"home"}"""))
         assertEquals(AgentAction.Done("opened"), ActionJson.parse("""{"action":"done","summary":"opened"}"""))

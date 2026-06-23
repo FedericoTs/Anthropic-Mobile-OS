@@ -21,6 +21,7 @@ class PolicyGate(
         is AgentAction.Tap ->
             if (looksHighRisk(action.targetQuery)) SideEffect.IRREVERSIBLE else SideEffect.REVERSIBLE
         is AgentAction.TypeText -> SideEffect.REVERSIBLE
+        is AgentAction.Scroll -> SideEffect.REVERSIBLE
         is AgentAction.LaunchApp, AgentAction.Back, AgentAction.Home -> SideEffect.READ_ONLY
         is AgentAction.Done, is AgentAction.Abort -> SideEffect.READ_ONLY
     }

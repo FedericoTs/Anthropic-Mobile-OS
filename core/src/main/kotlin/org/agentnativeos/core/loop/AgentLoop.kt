@@ -231,6 +231,7 @@ class AgentLoop(
     private fun targetQuery(action: AgentAction): String? = when (action) {
         is AgentAction.Tap -> action.targetQuery
         is AgentAction.TypeText -> action.targetQuery
+        is AgentAction.Scroll -> action.targetQuery
         else -> null
     }
 

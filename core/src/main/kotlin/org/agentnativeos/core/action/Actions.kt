@@ -8,12 +8,16 @@ package org.agentnativeos.core.action
 sealed interface AgentAction {
     data class Tap(val targetQuery: String) : AgentAction
     data class TypeText(val targetQuery: String, val value: String) : AgentAction
+    data class Scroll(val targetQuery: String, val direction: ScrollDirection) : AgentAction
     data class LaunchApp(val packageName: String) : AgentAction
     data object Back : AgentAction
     data object Home : AgentAction
     data class Done(val summary: String) : AgentAction
     data class Abort(val reason: String) : AgentAction
 }
+
+/** Scroll/swipe direction for [AgentAction.Scroll] (wheel pickers and lists). */
+enum class ScrollDirection { UP, DOWN }
 
 /** Side-effect class. The agency dial may only loosen READ_ONLY and REVERSIBLE. */
 enum class SideEffect { READ_ONLY, REVERSIBLE, IRREVERSIBLE }
@@ -22,6 +26,7 @@ enum class SideEffect { READ_ONLY, REVERSIBLE, IRREVERSIBLE }
 fun AgentAction.uiTarget(): String? = when (this) {
     is AgentAction.Tap -> targetQuery
     is AgentAction.TypeText -> targetQuery
+    is AgentAction.Scroll -> targetQuery
     else -> null
 }
 
@@ -29,6 +34,7 @@ fun AgentAction.uiTarget(): String? = when (this) {
 fun AgentAction.label(): String = when (this) {
     is AgentAction.Tap -> "tap \"$targetQuery\""
     is AgentAction.TypeText -> "type into \"$targetQuery\""
+    is AgentAction.Scroll -> "scroll ${direction.name.lowercase()} on \"$targetQuery\""
     is AgentAction.LaunchApp -> "open $packageName"
     AgentAction.Back -> "go back"
     AgentAction.Home -> "go home"

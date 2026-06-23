@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import org.agentnativeos.core.action.AgentAction
+import org.agentnativeos.core.action.ScrollDirection
 import org.agentnativeos.core.loop.ActionOutcome
 import org.agentnativeos.core.loop.Actuator
 import org.agentnativeos.core.loop.Perceiver
@@ -59,6 +60,7 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
     override fun act(action: AgentAction): ActionOutcome = when (action) {
         is AgentAction.Tap -> tap(action.targetQuery)
         is AgentAction.TypeText -> type(action.targetQuery, action.value)
+        is AgentAction.Scroll -> scroll(action.targetQuery, action.direction)
         is AgentAction.LaunchApp -> launch(action.packageName)
         AgentAction.Back -> ActionOutcome(performGlobalAction(GLOBAL_ACTION_BACK))
         AgentAction.Home -> ActionOutcome(performGlobalAction(GLOBAL_ACTION_HOME))
@@ -98,6 +100,32 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
             .addStroke(GestureDescription.StrokeDescription(path, 0L, 60L))
             .build()
         return ActionOutcome(dispatchGesture(gesture, null, null), "gesture")
+    }
+
+    private fun scroll(query: String, direction: ScrollDirection): ActionOutcome {
+        val node = findNode(query) ?: return ActionOutcome(false, "no node matching \"$query\"")
+        // Prefer a precise accessibility scroll on the nearest scrollable container
+        // (wheel pickers and lists expose this); fall back to a swipe gesture.
+        var scrollable: AccessibilityNodeInfo? = node
+        while (scrollable != null && !scrollable.isScrollable) scrollable = scrollable.parent
+        if (scrollable != null) {
+            val act = if (direction == ScrollDirection.UP) {
+                AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            } else {
+                AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+            }
+            if (scrollable.performAction(act)) return ActionOutcome(true, "scroll")
+        }
+        val b = Rect().also { node.getBoundsInScreen(it) }
+        val x = b.exactCenterX()
+        val near = b.top + b.height() * 0.25f
+        val far = b.top + b.height() * 0.75f
+        val (startY, endY) = if (direction == ScrollDirection.UP) far to near else near to far
+        val path = Path().apply { moveTo(x, startY); lineTo(x, endY) }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0L, 200L))
+            .build()
+        return ActionOutcome(dispatchGesture(gesture, null, null), "swipe")
     }
 
     private fun type(query: String, value: String): ActionOutcome {

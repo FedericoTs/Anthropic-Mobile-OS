@@ -37,6 +37,18 @@ class CompensationPlanner(private val gate: PolicyGate = PolicyGate()) {
                 inverse = AgentAction.TypeText(action.targetQuery, priorText ?: ""),
                 description = "restore previous text in \"${action.targetQuery}\"",
             )
+            is AgentAction.Scroll -> Compensation.Undoable(
+                inverse = AgentAction.Scroll(
+                    action.targetQuery,
+                    if (action.direction == org.agentnativeos.core.action.ScrollDirection.UP) {
+                        org.agentnativeos.core.action.ScrollDirection.DOWN
+                    } else {
+                        org.agentnativeos.core.action.ScrollDirection.UP
+                    },
+                ),
+                description = "scroll back",
+            )
+
             is AgentAction.Tap,
             AgentAction.Back,
             AgentAction.Home,

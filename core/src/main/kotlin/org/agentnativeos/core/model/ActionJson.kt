@@ -1,6 +1,7 @@
 package org.agentnativeos.core.model
 
 import org.agentnativeos.core.action.AgentAction
+import org.agentnativeos.core.action.ScrollDirection
 
 /**
  * The wire contract between the model and the typed action schema. The planner is
@@ -21,6 +22,7 @@ object ActionJson {
         Reply with exactly one JSON object and nothing else. Allowed forms:
         {"action":"tap","target":"<visible text>"}
         {"action":"type","target":"<field text>","text":"<value>"}
+        {"action":"scroll","target":"<element>","direction":"up|down"}
         {"action":"launch","package":"<package name>"}
         {"action":"back"}
         {"action":"home"}
@@ -36,6 +38,15 @@ object ActionJson {
                 val target = m["target"]
                 val value = m["text"]
                 if (target != null && value != null) AgentAction.TypeText(target, value) else null
+            }
+            "scroll" -> {
+                val target = m["target"]
+                val dir = when (m["direction"]?.lowercase()?.trim()) {
+                    "up" -> ScrollDirection.UP
+                    "down" -> ScrollDirection.DOWN
+                    else -> null
+                }
+                if (target != null && dir != null) AgentAction.Scroll(target, dir) else null
             }
             "launch" -> m["package"]?.let { AgentAction.LaunchApp(it) }
             "back" -> AgentAction.Back
