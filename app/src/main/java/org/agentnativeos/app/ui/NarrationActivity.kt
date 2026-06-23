@@ -16,6 +16,7 @@ import org.agentnativeos.app.AgentSession
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.ModelPreferences
 import org.agentnativeos.app.NarrationDemo
+import org.agentnativeos.app.OverlayConfirm
 import org.agentnativeos.app.R
 import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.events.NarrationEvent
@@ -82,6 +83,19 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
             ClaudeModelProvider(auth, model),
             ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) },
         )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // While our feed is visible, the inline confirm card is enough; the floating
+        // overlay is only needed once the agent navigates into another app.
+        AgentSession.uiForeground = true
+        OverlayConfirm.hide()
+    }
+
+    override fun onPause() {
+        AgentSession.uiForeground = false
+        super.onPause()
     }
 
     override fun onDestroy() {

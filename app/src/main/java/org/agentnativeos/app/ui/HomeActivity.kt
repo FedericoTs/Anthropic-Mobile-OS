@@ -2,6 +2,7 @@ package org.agentnativeos.app.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.EditorInfo
@@ -97,11 +98,35 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchAgent(intent: String) = startActivity(
-        Intent(this, NarrationActivity::class.java)
-            .putExtra(NarrationActivity.EXTRA_RUN, true)
-            .putExtra(NarrationActivity.EXTRA_INTENT, intent),
-    )
+    private fun launchAgent(intent: String) {
+        if (!ensureOverlayPermission()) return // sent the user to grant it; they'll tap Go again
+        startActivity(
+            Intent(this, NarrationActivity::class.java)
+                .putExtra(NarrationActivity.EXTRA_RUN, true)
+                .putExtra(NarrationActivity.EXTRA_INTENT, intent),
+        )
+    }
+
+    /**
+     * Ask once for "Display over other apps" so the agent can float its confirm gate
+     * over whatever app it drives. Returns true to proceed with the run (granted, or
+     * already asked — the in-app card is the fallback), false if we just opened the
+     * settings screen for the user to grant it.
+     */
+    private fun ensureOverlayPermission(): Boolean {
+        if (Settings.canDrawOverlays(this)) return true
+        val prefs = getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_OVERLAY_ASKED, false)) return true // don't nag; fall back to in-app card
+        prefs.edit().putBoolean(KEY_OVERLAY_ASKED, true).apply()
+        toast(getString(R.string.overlay_rationale))
+        startActivity(
+            Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName"),
+            ),
+        )
+        return false
+    }
 
     private fun launchByLabel(query: String): Boolean {
         val pm = packageManager
@@ -117,4 +142,9 @@ class HomeActivity : AppCompatActivity() {
 
     private fun toast(message: String) =
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+
+    private companion object {
+        const val UI_PREFS = "agent_ui"
+        const val KEY_OVERLAY_ASKED = "overlay_asked"
+    }
 }

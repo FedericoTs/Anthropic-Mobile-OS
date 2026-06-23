@@ -13,6 +13,7 @@
     <string name="home_model_pill">● %1$s · swap model</string>
 
     <string name="needs_service">Enable “Agent OS” in Settings › Accessibility so the agent can act.</string>
+    <string name="overlay_rationale">Grant “Display over other apps” so the Approve card stays visible over whatever app the agent drives — then tap Go again.</string>
     <string name="needs_model">No model configured yet. Set a Claude login or API key to run intents.</string>
     <string name="opening">Opening %1$s…</string>
     <string name="app_not_found">Couldn’t find an app matching “%1$s”.</string>

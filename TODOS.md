@@ -60,22 +60,22 @@ the altitude of the plan items below:
   classifier OUT of the model loop (the gate must stay an out-of-model check vs injection).
 - **Priority:** P2 (v1 trust).
 
-## Persistent narration overlay — watch it act over other apps (future)
-- **What:** Today the agent backgrounds the Agent OS app whenever it acts in another app,
-  so you can't watch the narration during the act — the core "I can watch it think, so I
-  trust it" promise breaks exactly when it matters. Keep a small floating window (the live
-  step + Stop/Confirm) pinned over whatever app the agent is driving.
-- **Why:** Trust + the confirm gate need to be visible AND reachable while the agent acts on
-  a third-party screen. Right now a high-side-effect confirm would surface in a backgrounded
-  app — the user might not see it.
-- **Design/approach:** Android SYSTEM_ALERT_WINDOW overlay (or a Bubble) hosting a compact
-  narration surface: active step + a reachable Stop and, crucially, the Confirm card in the
-  thumb zone. Honor the design's restraint (small, calm, dismissible). Needs the
-  "Display over other apps" special permission (user-granted) — graceful fallback to the
-  in-app feed when not granted. Mind the FLAG_SECURE/overlay interaction from the T0 spike.
-- **Context:** raised 2026-06-23 during on-device testing (settings→display worked, but the
-  feed vanished while acting). Pairs with the default-launcher path.
-- **Priority:** P2 (M0+ trust UX) — high value once real multi-app tasks are common.
+## Persistent narration overlay — watch it act over other apps (confirm shipped; live-step pending)
+- **SHIPPED (2026-06-23):** the CONFIRM GATE now floats over whatever app the agent drives
+  (`OverlayConfirm` — SYSTEM_ALERT_WINDOW, TYPE_APPLICATION_OVERLAY, non-focusable so it never
+  steals the active window from the actuator). It shows only when our narration UI is
+  backgrounded (`AgentSession.uiForeground`), mirrors the in-app card (caution + drafted action
+  + Approve/Skip/Stop) in the thumb zone, slides up honoring reduced-motion, and falls back to
+  the in-app card when "Display over other apps" isn't granted (HomeActivity asks once). Closes
+  the safety hole where a high-side-effect confirm surfaced invisibly in the background.
+- **STILL TODO (live-step streaming):** the overlay shows only at a confirm, not the running
+  narration. Stream the active step (eye/spark/phone glyph + line) into the same floating
+  surface so you can watch it think while it acts in another app, not just approve. Subscribe
+  the overlay to the event bus (or have AgentSession push the active step) and update a compact
+  text line; keep it calm and dismissible.
+- **Caveat to carry:** mind the FLAG_SECURE/overlay interaction from the T0 spike (a secure
+  screen may suppress the overlay) and the default-launcher path.
+- **Priority:** P2 (M0+ trust UX) — live-step is the remaining half.
 
 ## Adaptive result UI — content-aware presentation of the agent's output (future)
 - **What:** Give the agent's RESULT its own surface that adapts to what it presents, instead

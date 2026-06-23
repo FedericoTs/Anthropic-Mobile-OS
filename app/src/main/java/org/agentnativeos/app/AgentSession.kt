@@ -46,6 +46,11 @@ object AgentSession {
     var pendingConfirm: Pair<AgentAction, String>? = null
         private set
 
+    /** Whether the narration UI is in the foreground (set by NarrationActivity).
+     *  When it isn't, a confirm floats over the app the agent is driving instead. */
+    @Volatile
+    var uiForeground: Boolean = false
+
     /** The undo stack for the current/last run (E2-4) — ready for an Undo affordance. */
     @Volatile
     var lastUndoStack: UndoStack? = null
@@ -72,14 +77,22 @@ object AgentSession {
     fun awaitConfirmation(action: AgentAction, reason: String): Boolean {
         if (stopRequested) return false
         pendingConfirm = action to reason
-        main.post { listener?.onConfirmRequested(action, reason) }
+        main.post {
+            listener?.onConfirmRequested(action, reason)
+            // If the agent has navigated away from our UI, surface the confirm as a
+            // floating card over that app so it can't be missed in the background.
+            if (!uiForeground) OverlayConfirm.show(reason)
+        }
         val approved = try {
             confirmChannel.take()
         } catch (e: InterruptedException) {
             false
         }
         pendingConfirm = null
-        main.post { listener?.onConfirmResolved() }
+        main.post {
+            listener?.onConfirmResolved()
+            OverlayConfirm.hide()
+        }
         return approved && !stopRequested
     }
 
@@ -92,10 +105,14 @@ object AgentSession {
     fun requestStop() {
         stopRequested = true
         confirmChannel.offer(false)
+        OverlayConfirm.hide()
     }
 
     fun finish(result: LoopResult) {
         running = false
-        main.post { listener?.onFinished(result) }
+        main.post {
+            listener?.onFinished(result)
+            OverlayConfirm.hide()
+        }
     }
 }
