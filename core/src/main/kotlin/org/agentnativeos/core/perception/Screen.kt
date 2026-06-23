@@ -68,6 +68,44 @@ object NodeFinder {
         return count
     }
 
+    /**
+     * A compact, structured description of the screen for the planner: one line per
+     * labelled element, tagged by how it can be used. Crucially it includes
+     * contentDescription, not just text — so icon buttons, keypad digits, toggles and
+     * play/start controls (which often have no visible text) are visible to the model.
+     *
+     *   [tap] 5            (clickable)
+     *   [input] Search     (editable field; shows its current text/hint)
+     *   [text] 00:05.00    (static label)
+     *
+     * Password nodes are redacted at the source. Duplicate lines are collapsed and the
+     * list is capped so a busy launcher doesn't blow up the prompt.
+     */
+    fun describe(root: ScreenNode?, maxLines: Int = 150): String {
+        root ?: return ""
+        val lines = LinkedHashSet<String>()
+        val queue = ArrayDeque<ScreenNode>()
+        queue.add(root)
+        while (queue.isNotEmpty() && lines.size < maxLines) {
+            val node = queue.removeFirst()
+            if (!node.isPassword) {
+                val label = (node.text?.takeIf { it.isNotBlank() }
+                    ?: node.contentDescription?.takeIf { it.isNotBlank() })
+                    ?.trim()?.replace('\n', ' ')
+                if (label != null) {
+                    val tag = when {
+                        node.isEditable -> "[input]"
+                        node.isClickable -> "[tap]"
+                        else -> "[text]"
+                    }
+                    lines.add("$tag $label")
+                }
+            }
+            queue.addAll(node.children)
+        }
+        return lines.joinToString("\n")
+    }
+
     /** Visible (non-password) text of the whole tree, newline-joined. */
     fun visibleText(root: ScreenNode?): String {
         root ?: return ""

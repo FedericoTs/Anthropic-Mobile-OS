@@ -106,7 +106,7 @@ class AgentLoop(
             val action = provider.nextAction(
                 PlanningContext(
                     intent = intent,
-                    untrustedScreen = UntrustedObservation.wrap(NodeFinder.visibleText(observation.root)),
+                    untrustedScreen = UntrustedObservation.wrap(NodeFinder.describe(observation.root)),
                     stepIndex = step,
                     history = history.toList(),
                     availableApps = availableApps,
