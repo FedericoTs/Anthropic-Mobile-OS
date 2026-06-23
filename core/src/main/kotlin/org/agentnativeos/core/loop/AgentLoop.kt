@@ -63,6 +63,8 @@ class AgentLoop(
     private val maxStaleReplans: Int = 3,
     /** The same action executed this many times in a row with no progress => stop (stuck). */
     private val maxStuckRepeats: Int = 3,
+    /** A failed action re-plans (with the error fed back) rather than aborts, up to this many times. */
+    private val maxActionRetries: Int = 3,
     /** Apps the planner may launch directly by package (perceived from the device). */
     private val availableApps: List<AppInfo> = emptyList(),
     private val cancelled: () -> Boolean = { false },
@@ -76,6 +78,8 @@ class AgentLoop(
         var staleStreak = 0
         var lastActedLabel: String? = null
         var actedRepeats = 0
+        var lastError: String? = null
+        var failStreak = 0
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
@@ -106,6 +110,7 @@ class AgentLoop(
                     stepIndex = step,
                     history = history.toList(),
                     availableApps = availableApps,
+                    lastError = lastError,
                 ),
             )
 
@@ -173,9 +178,20 @@ class AgentLoop(
                     if (outcome.detail.isNotEmpty()) append(" (").append(outcome.detail).append(')')
                 }
                 bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
+                // Don't give up on the first miss: feed the error back and let the
+                // model try a different approach (e.g. tap digit keys instead of
+                // typing into a timer), up to a cap, then hand off.
+                if (failStreak < maxActionRetries) {
+                    failStreak++
+                    lastError = reason
+                    if (settleMs > 0) idle(settleMs)
+                    continue
+                }
                 return LoopResult.Aborted(reason, gotAsFar, step)
             }
             staleStreak = 0
+            failStreak = 0
+            lastError = null
 
             // 5b) stuck detection — the same action acted repeatedly without the
             //     screen progressing means we're in a loop (e.g. tapping Cancel on a

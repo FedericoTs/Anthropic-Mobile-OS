@@ -39,6 +39,8 @@ data class PlanningContext(
     val stepIndex: Int,
     val history: List<AgentAction> = emptyList(),
     val availableApps: List<AppInfo> = emptyList(),
+    /** The previous attempt's failure, if any, so the model can try something else. */
+    val lastError: String? = null,
 )
 
 /** The planner seam: given context, return the next typed action. */

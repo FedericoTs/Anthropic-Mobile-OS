@@ -54,11 +54,12 @@ class AgentLoopTest {
     }
 
     @Test
-    fun actionFailure_abortsWithHandoff() {
+    fun actionFailure_retriesThenAbortsWithHandoff() {
+        // Every attempt fails; the loop re-plans a few times, then hands off.
         val actuator = RecordingActuator(succeed = false, detail = "not clickable")
         val result = loop(
             StaticPerceiver(screenWith("Battery")),
-            org.agentnativeos.core.model.ScriptedModelProvider(listOf(AgentAction.Tap("Battery"))),
+            org.agentnativeos.core.model.ModelProvider { AgentAction.Tap("Battery") },
             actuator,
         ).run("open battery")
 
@@ -66,7 +67,34 @@ class AgentLoopTest {
         result as LoopResult.Aborted
         assertTrue(result.reason.contains("couldn't"))
         assertEquals("nothing yet", result.gotAsFar)
-        assertEquals(1, actuator.performed.size) // it tried once
+        assertTrue("retries before giving up", actuator.performed.size in 2..4)
+    }
+
+    @Test
+    fun actionFailure_recoversByTryingADifferentAction() {
+        // The timer field can't be typed into; the model then taps a digit key,
+        // which succeeds — the run must recover, not abort on the first failure.
+        val actuator = object : Actuator {
+            val performed = mutableListOf<AgentAction>()
+            override fun act(action: AgentAction): ActionOutcome {
+                performed.add(action)
+                val typedTimer = action is AgentAction.TypeText && action.targetQuery == "00:00.00"
+                return ActionOutcome(!typedTimer, if (typedTimer) "setText" else "")
+            }
+        }
+        val result = loop(
+            StaticPerceiver(screenWith("00:00.00", "5")),
+            org.agentnativeos.core.model.ScriptedModelProvider(
+                listOf(AgentAction.TypeText("00:00.00", "5"), AgentAction.Tap("5"), AgentAction.Done("timer set")),
+            ),
+            actuator,
+        ).run("start a 5 minute timer")
+
+        assertTrue(result is LoopResult.Completed)
+        assertEquals(
+            listOf(AgentAction.TypeText("00:00.00", "5"), AgentAction.Tap("5")),
+            actuator.performed,
+        )
     }
 
     @Test

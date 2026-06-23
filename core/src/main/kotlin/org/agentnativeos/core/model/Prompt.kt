@@ -28,6 +28,12 @@ object Prompt {
         appendLine("code fences. If the user is asking a question, or the task is done, or you cannot act,")
         appendLine("""use {"action":"done","summary":"<your answer or result>"}. Never reply in plain text.""")
         appendLine()
+        appendLine("INPUTS: some values are NOT text fields — a timer, dialer, PIN or number pad is entered")
+        appendLine("by TAPPING the on-screen digit keys (e.g. tap \"5\", then \"0\", then \"0\" for five")
+        appendLine("minutes), not with type. Use type only for real editable text fields. If an action fails")
+        appendLine("or the screen does not change, do NOT repeat it — try a different element or approach.")
+        appendLine("Only report done when the user's goal is actually achieved; opening an app is not done.")
+        appendLine()
         append(ActionJson.SCHEMA_HINT)
     }
 
@@ -40,6 +46,9 @@ object Prompt {
         if (context.availableApps.isNotEmpty()) {
             appendLine("""Installed apps you can launch with {"action":"launch","package":"<package>"}:""")
             context.availableApps.forEach { appendLine("- ${it.label}  ${it.packageName}") }
+        }
+        context.lastError?.let {
+            appendLine("Your previous attempt failed: $it. Try a different element or approach.")
         }
         appendLine("Current screen:")
         append(context.untrustedScreen)
