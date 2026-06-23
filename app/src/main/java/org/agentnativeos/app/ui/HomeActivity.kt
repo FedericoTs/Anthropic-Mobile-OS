@@ -1,19 +1,23 @@
 package org.agentnativeos.app.ui
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.HomeAction
 import org.agentnativeos.app.HomeRouter
 import org.agentnativeos.app.ModelPreferences
+import org.agentnativeos.app.PersistentTaskMemory
 import org.agentnativeos.app.R
 import org.agentnativeos.app.device.AgentAccessibilityService
+import org.agentnativeos.core.memory.TaskStatus
 import org.agentnativeos.core.model.ModelCatalog
 
 /**
@@ -45,12 +49,25 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
         // Reflect the chosen model on the pill (DESIGN: dot + model name + swap).
         val model = ModelCatalog.byId(ModelPreferences(this).selected)
         findViewById<Button>(R.id.btn_swap_model).text =
             getString(R.string.home_model_pill, model.shortLabel)
+
+        // Recent activity (agent memory) — the home's quiet record of what it did.
+        val recent = PersistentTaskMemory(this).recent(3)
+        findViewById<TextView>(R.id.txt_recent).text =
+            if (recent.isEmpty()) {
+                getString(R.string.home_recent_none)
+            } else {
+                recent.joinToString("\n") {
+                    val mark = if (it.status == TaskStatus.COMPLETED) "✓" else "⚠"
+                    "$mark ${it.intent}"
+                }
+            }
     }
 
     private fun submit(raw: String) {

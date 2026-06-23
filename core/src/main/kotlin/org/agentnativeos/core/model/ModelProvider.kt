@@ -1,6 +1,7 @@
 package org.agentnativeos.core.model
 
 import org.agentnativeos.core.action.AgentAction
+import org.agentnativeos.core.memory.TaskRecord
 
 /**
  * How we authenticate to the model: one interface, two credential modes. The
@@ -43,6 +44,8 @@ data class PlanningContext(
     val history: List<AgentAction> = emptyList(),
     val availableApps: List<AppInfo> = emptyList(),
     val capabilities: List<Capability> = emptyList(),
+    /** Recent tasks this agent has done (newest first) — continuity + "what did you do?". */
+    val recentTasks: List<TaskRecord> = emptyList(),
     /** The previous attempt's failure, if any, so the model can try something else. */
     val lastError: String? = null,
 )

@@ -70,6 +70,8 @@ class AgentLoop(
     private val availableApps: List<AppInfo> = emptyList(),
     /** Direct device capabilities the planner may invoke instead of driving the UI. */
     private val capabilities: List<Capability> = emptyList(),
+    /** Recent tasks (newest first) for continuity and "what have you done?". */
+    private val recentTasks: List<org.agentnativeos.core.memory.TaskRecord> = emptyList(),
     private val cancelled: () -> Boolean = { false },
     private val undo: org.agentnativeos.core.undo.UndoStack? = null,
     private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
@@ -114,6 +116,7 @@ class AgentLoop(
                     history = history.toList(),
                     availableApps = availableApps,
                     capabilities = capabilities,
+                    recentTasks = recentTasks,
                     lastError = lastError,
                 ),
             )

@@ -12,6 +12,8 @@ import org.agentnativeos.core.events.InMemoryEventBus
 import org.agentnativeos.core.loop.AgentLoop
 import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
+import org.agentnativeos.core.memory.TaskRecord
+import org.agentnativeos.core.memory.TaskStatus
 import org.agentnativeos.core.model.ModelProvider
 import org.agentnativeos.core.model.ScriptedModelProvider
 import org.agentnativeos.core.undo.UndoStack
@@ -43,6 +45,7 @@ object AgentController {
         AgentSession.begin()
         val undo = UndoStack()
         AgentSession.lastUndoStack = undo
+        val memory = PersistentTaskMemory(service)
         executor.execute {
             val bus = InMemoryEventBus()
             val audit = AuditLog()
@@ -67,10 +70,13 @@ object AgentController {
                 availableApps = installedApps(service),
                 // Direct fast paths (set timer/alarm, dial, open url, search, sms/email).
                 capabilities = Capabilities.CATALOG,
+                // What the agent has done before — continuity + "what have you done?".
+                recentTasks = memory.recent(8),
                 cancelled = { AgentSession.stopRequested },
                 undo = undo,
             )
             val result = loop.run(intent)
+            memory.record(toRecord(intent, result))
             Log.i(TAG, "result: $result")
             AgentSession.finish(result)
             onResult(result)
@@ -80,6 +86,11 @@ object AgentController {
     /** CI / demo: run a fixed scripted plan (no model, no network). */
     fun runScripted(intent: String, script: List<AgentAction>, onResult: (LoopResult) -> Unit = {}) {
         run(intent, ScriptedModelProvider(script), ConfirmationHandler { _, _ -> false }, onResult)
+    }
+
+    private fun toRecord(intent: String, result: LoopResult): TaskRecord = when (result) {
+        is LoopResult.Completed -> TaskRecord(intent, TaskStatus.COMPLETED, result.summary, result.steps, System.currentTimeMillis())
+        is LoopResult.Aborted -> TaskRecord(intent, TaskStatus.ABORTED, result.reason, result.steps, System.currentTimeMillis())
     }
 
     /** Launchable apps (label -> package) so the planner can open one directly. */

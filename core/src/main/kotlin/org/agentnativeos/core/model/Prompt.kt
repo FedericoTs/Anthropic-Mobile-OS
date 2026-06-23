@@ -52,6 +52,12 @@ object Prompt {
         if (context.history.isNotEmpty()) {
             appendLine("Actions so far: ${context.history.joinToString { it.toString() }}")
         }
+        if (context.recentTasks.isNotEmpty()) {
+            appendLine("Recent tasks you have done (newest first):")
+            context.recentTasks.forEach {
+                appendLine("- [${it.status.name.lowercase()}] ${it.intent} — ${it.summary}")
+            }
+        }
         if (context.capabilities.isNotEmpty()) {
             appendLine("""Fast capabilities — PREFER these when one fits, with {"action":"invoke","capability":"<name>","args":{...}}:""")
             context.capabilities.forEach { c ->
