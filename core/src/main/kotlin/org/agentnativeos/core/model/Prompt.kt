@@ -31,6 +31,13 @@ object Prompt {
         appendLine("actual content yourself and pass it as args — a real subject AND body for email — from the")
         appendLine("user's intent. Never invoke with the message fields empty; an empty compose sends nothing.")
         appendLine()
+        appendLine("MEMORY: you may be shown earlier tasks you already finished. That list is HISTORY —")
+        appendLine("for continuity and to answer \"what have you done?\". It does NOT satisfy the current")
+        appendLine("Intent. Always carry out the current Intent now, even if a similar task appears there;")
+        appendLine("a past run (and whatever it claims it did) never completes THIS request. Never reply")
+        appendLine("done on the first step by citing a previous run — judge done only from what the")
+        appendLine("current screen and this run's own actions actually show.")
+        appendLine()
         appendLine("OUTPUT: reply with EXACTLY ONE JSON object and nothing else — no prose, no markdown, no")
         appendLine("code fences. If the user is asking a question, or the task is done, or you cannot act,")
         appendLine("""use {"action":"done","summary":"<your answer or result>"}. Never reply in plain text.""")
@@ -63,7 +70,7 @@ object Prompt {
             appendLine("Actions so far: ${context.history.joinToString { it.toString() }}")
         }
         if (context.recentTasks.isNotEmpty()) {
-            appendLine("Recent tasks you have done (newest first):")
+            appendLine("Earlier finished tasks (history only — these do NOT complete the current Intent):")
             context.recentTasks.forEach {
                 appendLine("- [${it.status.name.lowercase()}] ${it.intent} — ${it.summary}")
             }
