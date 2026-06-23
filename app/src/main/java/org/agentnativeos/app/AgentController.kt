@@ -7,8 +7,10 @@ import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.model.AppInfo
 import org.agentnativeos.core.action.PolicyGate
 import org.agentnativeos.core.events.AuditLog
+import org.agentnativeos.core.events.Correlation
 import org.agentnativeos.core.events.EventConsumer
 import org.agentnativeos.core.events.InMemoryEventBus
+import org.agentnativeos.core.events.NarrationEvent
 import org.agentnativeos.core.loop.AgentLoop
 import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
@@ -86,6 +88,30 @@ object AgentController {
     /** CI / demo: run a fixed scripted plan (no model, no network). */
     fun runScripted(intent: String, script: List<AgentAction>, onResult: (LoopResult) -> Unit = {}) {
         run(intent, ScriptedModelProvider(script), ConfirmationHandler { _, _ -> false }, onResult)
+    }
+
+    /**
+     * Rewind the last run: replay each step's inverse (newest first), stopping at an
+     * irreversible barrier. The inverses are all low-side-effect (Back / restore text /
+     * scroll back), so they skip the gate. Narrated into the same feed for transparency.
+     */
+    fun undoLast() {
+        val service = AgentAccessibilityService.instance ?: return
+        val plan = AgentSession.lastUndoStack?.rewindPlan().orEmpty()
+        if (plan.isEmpty()) return
+        executor.execute {
+            var step = 0
+            for (perform in plan) {
+                val outcome = service.act(perform.inverse)
+                AgentSession.emit(
+                    NarrationEvent.Execute(Correlation("undo", step), System.currentTimeMillis(), "undo: ${perform.description}", outcome.ok),
+                )
+                step++
+                try { Thread.sleep(800) } catch (_: InterruptedException) {}
+                if (!outcome.ok) break
+            }
+            AgentSession.emit(NarrationEvent.Done(Correlation("undo", step), System.currentTimeMillis(), "Undid $step step(s)"))
+        }
     }
 
     private fun toRecord(intent: String, result: LoopResult): TaskRecord = when (result) {

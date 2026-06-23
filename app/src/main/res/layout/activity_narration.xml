@@ -117,6 +117,19 @@
             android:layout_weight="1" />
 
         <Button
+            android:id="@+id/btn_undo"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_pill"
+            android:paddingHorizontal="20dp"
+            android:text="@string/narration_undo"
+            android:textAllCaps="false"
+            android:textColor="@color/text"
+            android:visibility="gone" />
+
+        <Button
             android:id="@+id/btn_apps"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"

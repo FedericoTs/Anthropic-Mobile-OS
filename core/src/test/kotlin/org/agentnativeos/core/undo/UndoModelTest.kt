@@ -64,6 +64,33 @@ class UndoModelTest {
     }
 
     @Test
+    fun rewindPlanReturnsAllInversesNewestFirst() {
+        val stack = UndoStack()
+        stack.record(AgentAction.LaunchApp("com.x"), planner.compensationFor(AgentAction.LaunchApp("com.x")))
+        stack.record(AgentAction.Tap("Battery"), planner.compensationFor(AgentAction.Tap("Battery")))
+        stack.record(AgentAction.TypeText("Search", "wifi"), planner.compensationFor(AgentAction.TypeText("Search", "wifi"), "old"))
+
+        val plan = stack.rewindPlan().map { it.inverse }
+        assertEquals(
+            listOf(AgentAction.TypeText("Search", "old"), AgentAction.Back, AgentAction.Back),
+            plan,
+        )
+        assertEquals(0, stack.depth())
+    }
+
+    @Test
+    fun rewindPlanStopsAtAnIrreversibleBarrier() {
+        val stack = UndoStack()
+        stack.record(AgentAction.Tap("Compose"), planner.compensationFor(AgentAction.Tap("Compose")))
+        stack.record(AgentAction.Tap("Send"), planner.compensationFor(AgentAction.Tap("Send"))) // irreversible
+        stack.record(AgentAction.Tap("Back to inbox"), planner.compensationFor(AgentAction.Tap("Back to inbox")))
+
+        // Only the step after the barrier can be undone; the sent action stays.
+        assertEquals(listOf(AgentAction.Back), stack.rewindPlan().map { it.inverse })
+        assertEquals(2, stack.depth())
+    }
+
+    @Test
     fun cannotRewindPastAnIrreversibleStep() {
         val stack = UndoStack()
         stack.record(AgentAction.Tap("Compose"), planner.compensationFor(AgentAction.Tap("Compose")))

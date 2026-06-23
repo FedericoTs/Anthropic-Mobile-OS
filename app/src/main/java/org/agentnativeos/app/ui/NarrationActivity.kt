@@ -56,6 +56,10 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         findViewById<Button>(R.id.btn_apps).setOnClickListener {
             startActivity(Intent(this, AppGridActivity::class.java))
         }
+        findViewById<Button>(R.id.btn_undo).setOnClickListener {
+            it.visibility = View.GONE // consumed — a run rewinds once
+            AgentController.undoLast()
+        }
 
         AgentSession.setListener(this)
         // Render anything already in flight, then start a run if requested.
@@ -101,6 +105,10 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     override fun onFinished(result: LoopResult) {
         activeRow = null // nothing is "active" once the run ends
+        // Offer to rewind if the run did anything reversible (the trust gate's other half).
+        if (AgentSession.lastUndoStack?.canUndo == true) {
+            findViewById<Button>(R.id.btn_undo).visibility = View.VISIBLE
+        }
     }
 
     // Narration text is inherently dynamic (the agent's own words + a glyph prefix);

@@ -20,6 +20,8 @@
 
     <string name="narration_title">Watch it work</string>
     <string name="narration_stop">Stop</string>
+    <string name="narration_undo">↩ Undo</string>
+    <string name="narration_undone">Rewinding…</string>
     <string name="confirm_caution">Needs your OK</string>
     <string name="confirm_approve">Approve</string>
     <string name="confirm_skip">Skip</string>

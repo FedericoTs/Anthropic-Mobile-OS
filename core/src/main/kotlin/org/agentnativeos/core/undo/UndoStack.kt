@@ -34,6 +34,22 @@ class UndoStack {
     val canUndo: Boolean
         get() = entries.lastOrNull()?.compensation is Compensation.Undoable
 
+    /**
+     * The full sequence of inverses to rewind the run, newest step first, stopping at
+     * an irreversible barrier (you can't rewind past a committed action). Drains the
+     * undoable entries it returns; the barrier and anything before it stay protected.
+     */
+    fun rewindPlan(): List<UndoResult.Perform> {
+        val plan = mutableListOf<UndoResult.Perform>()
+        while (true) {
+            when (val r = undoLast()) {
+                is UndoResult.Perform -> plan += r
+                is UndoResult.Blocked -> return plan // can't rewind past this
+                UndoResult.NothingToUndo -> return plan
+            }
+        }
+    }
+
     /** Pop the last undoable step and return its inverse, or explain why not. */
     fun undoLast(): UndoResult {
         val top = entries.lastOrNull() ?: return UndoResult.NothingToUndo
