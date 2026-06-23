@@ -85,6 +85,8 @@ class AgentLoop(
         var actedRepeats = 0
         var lastError: String? = null
         var failStreak = 0
+        var actedScreen: String? = null // the screen the last successful act ran on
+        var actedLabel: String? = null
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
@@ -106,12 +108,20 @@ class AgentLoop(
                 ),
             )
 
+            val screen = NodeFinder.describe(observation.root)
+            // No-progress signal: a previous action that left the screen unchanged was a
+            // dead end (e.g. tapping "Just once" before selecting an app in a chooser) —
+            // tell the model so it tries something else before stuck-detection aborts.
+            if (actedScreen != null && screen == actedScreen) {
+                lastError = "Your last action (${actedLabel}) did not change the screen. Try a different element or approach."
+            }
+
             // 2) plan — the screen goes in as untrusted data, never instructions
             bus.emit(NarrationEvent.Plan(corr, clock(), intent))
             val action = provider.nextAction(
                 PlanningContext(
                     intent = intent,
-                    untrustedScreen = UntrustedObservation.wrap(NodeFinder.describe(observation.root)),
+                    untrustedScreen = UntrustedObservation.wrap(screen),
                     stepIndex = step,
                     history = history.toList(),
                     availableApps = availableApps,
@@ -199,6 +209,10 @@ class AgentLoop(
             staleStreak = 0
             failStreak = 0
             lastError = null
+            // Remember the screen this action ran on so the next perceive can tell
+            // whether it actually changed anything (no-progress signal above).
+            actedScreen = screen
+            actedLabel = action.label()
 
             // 5b) stuck detection — the same action acted repeatedly without the
             //     screen progressing means we're in a loop (e.g. tapping Cancel on a

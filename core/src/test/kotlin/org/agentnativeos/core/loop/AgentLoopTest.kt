@@ -157,6 +157,35 @@ class AgentLoopTest {
     }
 
     @Test
+    fun noProgress_tellsTheModelWhenAnActionLeftTheScreenUnchanged() {
+        // The tap "succeeds" but the screen never changes — a dead end, e.g. tapping
+        // "Solo una volta" on an app chooser before an app row is selected. The loop
+        // must feed that back so the model tries something else BEFORE stuck-abort.
+        val seenErrors = mutableListOf<String?>()
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            private var n = 0
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext): AgentAction {
+                seenErrors.add(context.lastError)
+                return if (n++ == 0) AgentAction.Tap("Solo una volta") else AgentAction.Done("done")
+            }
+        }
+        val result = loop(
+            StaticPerceiver(screenWith("Gmail", "PayPal", "Solo una volta")),
+            provider,
+            RecordingActuator(succeed = true),
+        ).run("send an email")
+
+        assertTrue(result is LoopResult.Completed)
+        // First plan saw no error; the plan after the dead tap was told the screen
+        // didn't change so it could pick a different element.
+        assertEquals(null, seenErrors.first())
+        assertTrue(
+            "no-progress signal must be fed back to the planner",
+            seenErrors.any { it?.contains("did not change the screen") == true },
+        )
+    }
+
+    @Test
     fun highSideEffect_requiresConfirm_approvedProceeds() {
         val actuator = RecordingActuator(succeed = true)
         val audit = AuditLog()

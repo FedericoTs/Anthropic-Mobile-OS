@@ -14,7 +14,10 @@ the altitude of the plan items below:
   fast path (set_timer/alarm, dial, open_url, web_search, sms/email) that does known
   tasks in ONE action instead of UI-driving.
 - Robustness: settle-after-act, re-plan on stale target, stuck-detection, re-plan on a
-  failed action (error fed back), re-ask on a prose (non-JSON) reply.
+  failed action (error fed back), re-ask on a prose (non-JSON) reply, no-progress detection
+  (an action that succeeds but leaves the screen unchanged is fed back so the model picks a
+  different element before the stuck-abort) + app-chooser prompt guidance ("select the app
+  row before 'Just once'/'Solo una volta'").
 - Perception upgraded to a structured, role-tagged screen (text AND contentDescription;
   partially addresses the a11y-tree budget item below).
 - App inventory (launch by package) + agent memory (durable task history, fed back into
