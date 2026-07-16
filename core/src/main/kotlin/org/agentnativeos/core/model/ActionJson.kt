@@ -61,6 +61,21 @@ object ActionJson {
         }
     }
 
+    /** Parse a verifier verdict {"verified": true|false, "reason": "..."} or null if unreadable. */
+    fun parseVerdict(raw: String): VerifyResult? {
+        val start = raw.indexOf('{')
+        val end = raw.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        val obj = Json.parse(raw.substring(start, end + 1)) as? Map<*, *> ?: return null
+        val verified = when (val v = obj["verified"]) {
+            is Boolean -> v
+            is String -> v.trim().equals("true", ignoreCase = true)
+            else -> return null // no clear verdict -> let the caller fail open
+        }
+        val reason = (obj["reason"] as? String)?.trim() ?: ""
+        return VerifyResult(verified, reason)
+    }
+
     /** Parse {"action":"invoke","capability":"x","args":{...}} via the full Json reader. */
     private fun parseInvoke(raw: String): AgentAction? {
         val start = raw.indexOf('{')

@@ -42,4 +42,18 @@ class ClaudeModelProvider(
         }
         return AgentAction.Abort("couldn't parse model output: ${lastRaw.trim().take(200)}")
     }
+
+    override fun verify(context: PlanningContext, claimedSummary: String): VerifyResult {
+        repeat(maxParseAttempts) {
+            val raw = try {
+                client.complete(Prompt.verifySystem(), Prompt.verifyUser(context, claimedSummary))
+            } catch (t: Throwable) {
+                // A verifier that can't run must never block a genuine completion — accept.
+                return VerifyResult(true, "verify unavailable: ${t.message}")
+            }
+            ActionJson.parseVerdict(raw)?.let { return it }
+        }
+        // Unreadable verdict after retries: fail OPEN so a flaky checker can't loop forever.
+        return VerifyResult(true, "verify unreadable")
+    }
 }

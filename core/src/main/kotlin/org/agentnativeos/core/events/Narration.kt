@@ -90,4 +90,15 @@ sealed interface NarrationEvent {
         override fun live() = "Done: $summary"
         override fun audit() = "done summary=$summary"
     }
+
+    /** The agent checking its own "done" claim against the live screen before finishing. */
+    data class Verify(
+        override val correlation: Correlation,
+        override val atMs: Long,
+        val ok: Boolean,
+        val reason: String,
+    ) : NarrationEvent {
+        override fun live() = if (ok) "Checked — it's done" else "Checked — not done yet: $reason"
+        override fun audit() = "verify ok=$ok reason=$reason"
+    }
 }

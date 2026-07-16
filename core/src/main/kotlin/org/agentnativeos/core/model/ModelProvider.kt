@@ -50,9 +50,21 @@ data class PlanningContext(
     val lastError: String? = null,
 )
 
+/** A second opinion on a claimed completion: is the task ACTUALLY done on the live screen? */
+data class VerifyResult(val verified: Boolean, val reason: String = "")
+
 /** The planner seam: given context, return the next typed action. */
 fun interface ModelProvider {
     fun nextAction(context: PlanningContext): AgentAction
+
+    /**
+     * Verify a claimed completion against the current screen before the loop accepts
+     * it. The model has repeatedly declared "done" it cannot see (memory poisoning /
+     * an unsent draft), so the real provider overrides this with a skeptical check.
+     * Default = accept, so scripted/lambda providers (tests, the eval) don't
+     * second-guess themselves. [claimedSummary] is the model's own "done" text.
+     */
+    fun verify(context: PlanningContext, claimedSummary: String): VerifyResult = VerifyResult(true)
 }
 
 /**

@@ -50,20 +50,27 @@ home already suggesting your 9am timer because it learned you do that.
 - App-chooser recovery: dead-tap on "Solo una volta" → no-progress signal → picks Gmail.
 - Multilingual confirm gate fires on "Invia" (`high=true` in trace) and approval works.
 - Agent memory answers "what have you done"; capability chain create_event→share_text→open_camera.
+- **✅ EMAIL SENT END-TO-END (2026-06-23):** send_email(to,subject,body) → chooser → compose
+  → floating confirm approved over Gmail → `execute tap "Invia" ok=true` → email received.
+  The "fully agentic" archetype (cross-app + high-side-effect commit) is proven. Phase 0
+  headline done; the rest of the Phase 0 regression pack (T-MEM-1 repeat, deny/skip,
+  redaction, undo) is NOT yet run live.
 
 ### Built and unit-tested, but NOT yet verified live
-- **Email end-to-end** — the current blocker, 4 fixes deep (see Phase 0):
-  mailto URI carries subject+body ✅ (compose was full last run); blank-perceive wait +
-  "invoke ≠ sent" prompt rules pushed but **untested on device**.
-- **Floating confirm overlay** (`OverlayConfirm`) — pushed, permission flow untested live.
+- **Verified-done** (Phase 1.1) — the honest-completion backstop; shipped in core, unit-tested,
+  awaiting device confirmation that it catches a false "done" (and doesn't over-abort).
+- **Floating confirm overlay** — the confirm card floated over Gmail on the successful email
+  run ✅; the live-step half of the overlay (D3) is not built.
 - **Undo affordance** — unit-tested; not yet exercised on device.
+- **Autonomous mode** (full silent auto-approve, Settings toggle, default OFF) — DECIDED,
+  not built; the immediate next feature after verified-done is device-confirmed.
 - **Multi-agent coordinator** (`core/multiagent/`) — Coordinator + ActuationScheduler
   + SubAgent exist with green tests against fakes; **not wired to the device at all**.
 
 ### Known defects / debts (each becomes work below)
 | # | Defect | Where it bites | Phase |
 |---|--------|----------------|-------|
-| D1 | Model narrates unverified success ("successfully sent") — RECURS despite 7468726; prompt rules alone insufficient, verified-done now clearly required | Done summaries, task memory | 1 (now) |
+| D1 | Model narrates unverified success ("successfully sent") — RECURRED despite 7468726. FIXED (core): verified-done — the loop makes a skeptical screen-only verify call before accepting any `Done`; unverifiable claims re-plan, then honestly abort. Unit-tested; needs on-device confirmation. | Done summaries, task memory | 1 (shipped, verify live) |
 | D2 | Task memory records model claims as facts (poisoned memory) | Planning context | 1 |
 | D3 | Trust surface invisible while agent acts in another app (only confirm floats; no live step) | Cross-app runs | 1 |
 | D4 | Per-step latency unmeasured; ~2s+ plan calls feel slow | Whole loop | 2 |
@@ -177,16 +184,20 @@ floating confirm appeared over Gmail; a repeated identical intent still executes
 Kills D1/D2/D3. "Fully agentic" is meaningless if the agent lies about being done;
 the demo's credibility rests on this.
 
-**1.1 Verified done (core)** — the model's `done` claim gets checked against reality.
-- When the model emits `Done` and the run performed ≥1 action, the loop re-perceives
-  (after settle) and makes **one** cheap verification call: fresh screen + intent +
-  action history → `{"verified": true|false, "reason": …}` (typed, JSON-only, same
-  provider). `verified=false` → feed reason back as `lastError`, continue planning
-  (cap: 1 re-verify per run, then finish as `Completed(unverified)`).
-- Loop change in `AgentLoop`, new `Prompt.verify(...)`, new `VerifyResult` parse in
-  `ActionJson`. Narrate it: `NarrationEvent.Verify(ok, reason)` — the user *sees*
-  the agent check its own work (pure trust-surface gold).
-- `TaskRecord` gains `verified: Boolean` (codec-compatible default `false`).
+**1.1 Verified done (core) — SHIPPED 2026-06-23 (unit-tested; awaiting on-device confirm).**
+- When the model emits `Done` and the run performed ≥1 action, `AgentLoop` calls
+  `provider.verify(context, claimedSummary)` — a skeptical, screen-ONLY second opinion
+  (`Prompt.verifySystem/verifyUser`) returning `{"verified": bool, "reason": …}`
+  (`ActionJson.parseVerdict` → `VerifyResult`). `verified=false` → reason fed back as
+  `lastError`, keep working; **2 consecutive unverifiable claims → honest Abort**
+  ("could not verify completion"), never a recorded false success. A real action resets
+  the counter. Verifier fails OPEN (accepts) on error/unparseable so it can't block a
+  genuine completion. `ModelProvider.verify` has a default (accept) so scripted/eval
+  providers are unaffected; only `ClaudeModelProvider` makes the real call.
+- Narrated: `NarrationEvent.Verify(ok, reason)` — the user *watches the agent check its
+  own work* ("Checked — not done yet: the form is still open"). Trust-surface gold.
+- STILL TODO (Phase 1 follow-ups): `TaskRecord.verified` flag so an unverified completion
+  is stored as `[completed?]` (D2); tune the verify prompt from live traces.
 - Memory prompt renders unverified completions as `[completed?]` so a past
   overclaim can't masquerade as fact (fixes D2 at the source).
 
@@ -422,6 +433,9 @@ dismissed + bucket) *is* the dataset; weekly review = tap-rate per bucket + a ma
 | 2026-06-23 | Confirm surface = floating overlay (chosen over notification) | DECIDED (Federico) |
 | 2026-06-23 | Predictive layer: heuristics-first, zero always-on model calls, suggestions never act | DECIDED (this plan) |
 | 2026-06-23 | UsageStatsManager signal is opt-in only, degrade gracefully | DECIDED (this plan) |
+| 2026-06-23 | **Autonomous mode = full silent auto-approve** (no confirm on irreversible actions) — overrides the "agency dial never loosens IRREVERSIBLE" design floor; the user owns the risk. Gated behind a Settings toggle, default OFF. | DECIDED (Federico) |
+| 2026-06-23 | **Verified-done built BEFORE autonomous mode** — a false "done" with no human confirm has no backstop, so honest completion must ship first. | DECIDED (Federico) |
+| 2026-06-23 | Verified-done fails OPEN (accepts) on verifier error/unparseable, and honestly ABORTS after 2 consecutive unverifiable "done" claims (never records unconfirmed success). | DECIDED (this plan) |
 | open | Does verified-done need a second opinion model or is self-verify enough? | Revisit with Phase 1 data |
 | open | Playbook intent-matching: exact-normalized vs embedding similarity | Start exact; revisit Phase 3 |
 | open | Location as a Phase 4+ signal (geofenced suggestions) | Parked — creepiness budget first |

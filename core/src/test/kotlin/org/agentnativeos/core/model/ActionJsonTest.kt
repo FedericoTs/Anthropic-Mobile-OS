@@ -10,6 +10,20 @@ import org.junit.Test
 class ActionJsonTest {
 
     @Test
+    fun parseVerdict_readsTheCompletionCheck() {
+        val yes = ActionJson.parseVerdict("""{"verified": true, "reason": "compose closed"}""")!!
+        assertEquals(true, yes.verified)
+        assertEquals("compose closed", yes.reason)
+        // Tolerates surrounding prose, like the action parser.
+        val no = ActionJson.parseVerdict("""here: {"verified": false, "reason": "still open"} .""")!!
+        assertEquals(false, no.verified)
+        assertEquals("still open", no.reason)
+        // No clear verdict -> null so the caller fails open (accepts the done).
+        assertNull(ActionJson.parseVerdict("not json"))
+        assertNull(ActionJson.parseVerdict("""{"reason":"missing the flag"}"""))
+    }
+
+    @Test
     fun parsesEveryActionType() {
         assertEquals(AgentAction.Tap("Battery"), ActionJson.parse("""{"action":"tap","target":"Battery"}"""))
         assertEquals(

@@ -1,11 +1,35 @@
 package org.agentnativeos.core.model
 
+import org.agentnativeos.core.action.AgentAction
 import org.agentnativeos.core.memory.TaskRecord
 import org.agentnativeos.core.memory.TaskStatus
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PromptTest {
+
+    @Test
+    fun verifyPromptIsSkepticalAndJudgesTheScreenOnly() {
+        val sys = Prompt.verifySystem().lowercase().replace(Regex("\\s+"), " ")
+        assertTrue("is a strict verifier", sys.contains("strict verifier"))
+        assertTrue("judges the current screen only", sys.contains("from the current screen only"))
+        assertTrue("the model's summary/memory is not evidence", sys.contains("are not evidence"))
+        assertTrue("a still-open compose/draft is not done", sys.contains("draft means it is not done"))
+        assertTrue("emits a verified verdict", sys.contains("\"verified\""))
+
+        val user = Prompt.verifyUser(
+            PlanningContext(
+                intent = "send an email to a@b.com",
+                untrustedScreen = "(screen)",
+                stepIndex = 3,
+                history = listOf(AgentAction.Tap("Invia")),
+            ),
+            "sent the email",
+        )
+        assertTrue(user.contains("send an email to a@b.com"))
+        assertTrue(user.contains("claims it is DONE"))
+        assertTrue("passes the model's own claim to the verifier", user.contains("sent the email"))
+    }
 
     @Test
     fun systemPromptTellsThePlannerMemoryDoesNotCompleteTheCurrentIntent() {

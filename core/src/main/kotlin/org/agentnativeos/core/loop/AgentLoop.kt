@@ -68,6 +68,8 @@ class AgentLoop(
     private val maxActionRetries: Int = 3,
     /** A blank/transitional screen re-perceives rather than planning against nothing, up to this cap. */
     private val maxEmptyPerceives: Int = 3,
+    /** A claimed "done" the screen can't confirm re-plans; this many in a row => honest abort. */
+    private val maxDoneVerifyFails: Int = 2,
     /** Apps the planner may launch directly by package (perceived from the device). */
     private val availableApps: List<AppInfo> = emptyList(),
     /** Direct device capabilities the planner may invoke instead of driving the UI. */
@@ -89,6 +91,7 @@ class AgentLoop(
         var failStreak = 0
         var actedScreen: String? = null // the screen the last successful act ran on
         var actedLabel: String? = null
+        var doneVerifyFails = 0 // consecutive "done" claims the screen didn't back up
 
         for (step in 0 until maxSteps) {
             val corr = Correlation(taskId, step)
@@ -145,6 +148,41 @@ class AgentLoop(
             // terminal actions
             when (action) {
                 is AgentAction.Done -> {
+                    // Verify a claimed completion against the live screen before accepting
+                    // it. The model has repeatedly hallucinated "done" (memory poisoning, an
+                    // unsent draft); a skeptical second look catches a claim the screen does
+                    // not support. Skip for a task with no actions (a question answered at
+                    // step 0 has nothing on screen to check).
+                    if (history.isNotEmpty()) {
+                        val verdict = provider.verify(
+                            PlanningContext(
+                                intent = intent,
+                                untrustedScreen = UntrustedObservation.wrap(screen),
+                                stepIndex = step,
+                                history = history.toList(),
+                                availableApps = availableApps,
+                                capabilities = capabilities,
+                                recentTasks = recentTasks,
+                            ),
+                            action.summary,
+                        )
+                        bus.emit(NarrationEvent.Verify(corr, clock(), verdict.verified, verdict.reason))
+                        if (!verdict.verified) {
+                            doneVerifyFails++
+                            if (doneVerifyFails < maxDoneVerifyFails) {
+                                // Not actually done — feed the reason back and keep working.
+                                lastError = "You reported the task done, but a check of the current " +
+                                    "screen says it is NOT complete: ${verdict.reason}. Keep going and " +
+                                    "actually finish it."
+                                continue
+                            }
+                            // Claimed done but never verifiable — hand off honestly rather than
+                            // record a success we cannot confirm (critical for autonomous runs).
+                            val reason = "reported done but could not verify completion: ${verdict.reason}"
+                            bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
+                            return LoopResult.Aborted(reason, gotAsFar, step)
+                        }
+                    }
                     bus.emit(NarrationEvent.Done(corr, clock(), action.summary))
                     return LoopResult.Completed(action.summary, step)
                 }
@@ -227,6 +265,8 @@ class AgentLoop(
             staleStreak = 0
             failStreak = 0
             lastError = null
+            // A real action is genuine progress, so a later "done" earns a fresh check.
+            doneVerifyFails = 0
             // Remember the screen this action ran on so the next perceive can tell
             // whether it actually changed anything (no-progress signal above).
             actedScreen = screen

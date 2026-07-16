@@ -186,6 +186,80 @@ class AgentLoopTest {
     }
 
     @Test
+    fun verifiedDone_rejectsAPrematureClaimThenFinishesOnceTheScreenBacksItUp() {
+        // The model claims done before the task is really complete; the verifier says no,
+        // the loop keeps working, and only accepts the second, screen-backed claim.
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            private var plan = 0
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext): AgentAction =
+                when (plan++) {
+                    0 -> AgentAction.Tap("Next") // a real action so there's something to verify
+                    1 -> AgentAction.Done("all done") // premature — verifier rejects
+                    else -> AgentAction.Done("actually done") // now backed by the screen
+                }
+            private var checks = 0
+            override fun verify(
+                context: org.agentnativeos.core.model.PlanningContext,
+                claimedSummary: String,
+            ) = if (checks++ == 0) {
+                org.agentnativeos.core.model.VerifyResult(false, "the form is still open")
+            } else {
+                org.agentnativeos.core.model.VerifyResult(true, "")
+            }
+        }
+        val audit = AuditLog()
+        val result = loop(
+            StaticPerceiver(screenWith("Next")), provider, RecordingActuator(succeed = true), audit = audit,
+        ).run("finish the form")
+
+        assertTrue(result is LoopResult.Completed)
+        assertEquals("actually done", (result as LoopResult.Completed).summary)
+        assertTrue("narrates the rejected self-check", audit.entries().any { it is NarrationEvent.Verify && !it.ok })
+        assertTrue("narrates the passing self-check", audit.entries().any { it is NarrationEvent.Verify && it.ok })
+    }
+
+    @Test
+    fun verifiedDone_abortsHonestlyWhenCompletionNeverVerifies() {
+        // The model keeps claiming done but the screen never backs it up: hand off with an
+        // honest "could not verify" rather than record a success that never happened.
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            private var plan = 0
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext): AgentAction =
+                if (plan++ == 0) AgentAction.Tap("Next") else AgentAction.Done("sent")
+            override fun verify(
+                context: org.agentnativeos.core.model.PlanningContext,
+                claimedSummary: String,
+            ) = org.agentnativeos.core.model.VerifyResult(false, "still not sent")
+        }
+        val result = loop(
+            StaticPerceiver(screenWith("Next")), provider, RecordingActuator(succeed = true),
+        ).run("send it")
+
+        assertTrue(result is LoopResult.Aborted)
+        assertTrue((result as LoopResult.Aborted).reason.contains("could not verify"))
+    }
+
+    @Test
+    fun verifiedDone_skipsVerificationForAQuestionAnsweredAtStepZero() {
+        var verifyCalls = 0
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext) =
+                AgentAction.Done("the answer is 42")
+            override fun verify(
+                context: org.agentnativeos.core.model.PlanningContext,
+                claimedSummary: String,
+            ): org.agentnativeos.core.model.VerifyResult {
+                verifyCalls++
+                return org.agentnativeos.core.model.VerifyResult(true)
+            }
+        }
+        val result = loop(StaticPerceiver(screenWith("Home")), provider, RecordingActuator()).run("what is 6x7?")
+
+        assertTrue(result is LoopResult.Completed)
+        assertEquals("no actions taken means nothing to verify", 0, verifyCalls)
+    }
+
+    @Test
     fun highSideEffect_requiresConfirm_approvedProceeds() {
         val actuator = RecordingActuator(succeed = true)
         val audit = AuditLog()
