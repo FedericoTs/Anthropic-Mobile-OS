@@ -5,14 +5,19 @@ box; you watch the agent perceive, plan, and act, and approve or stop it. Built
 app-first on a stock Android emulator (Milestone 0), with a forked AOSP priv-app as
 the north star (Milestone 1+).
 
-See [`docs/designs/agent-native-os.md`](docs/designs/agent-native-os.md) for the
-full plan and [`DESIGN.md`](DESIGN.md) for the design system.
+See [`PLAN.md`](PLAN.md) — the **single source of truth** for roadmap, test pack,
+and status — plus [`docs/designs/agent-native-os.md`](docs/designs/agent-native-os.md)
+for the founding vision and [`DESIGN.md`](DESIGN.md) for the design system.
 
 ## Status
 
-Milestone 0 starts with **T0, the hostile-app Accessibility spike** ([issue #1](https://github.com/FedericoTs/Anthropic-Mobile-OS/issues/1)),
-which gates everything else. The rest of the M0 backlog is filed only after T0's
-GO/PIVOT verdict.
+**Milestone 0 is live on real hardware** (Xiaomi/MIUI, Italian locale): the
+single-agent perceive→plan→gate→act→narrate loop drives real apps end-to-end —
+calculator and settings tasks, one-shot device capabilities (timer via intent),
+app-chooser recovery, a multilingual confirm gate, agent memory, and undo. The
+T0 hostile-app spike returned **GO** (`docs/spikes/t0-hostile-app.md`). Current
+work: honest completion verification, the floating trust surface, and the
+predictive home — see `PLAN.md` §5 for the phased roadmap.
 
 ## Repository layout
 
