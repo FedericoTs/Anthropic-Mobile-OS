@@ -69,7 +69,7 @@ home already suggesting your 9am timer because it learned you do that.
 | D4 | Per-step latency unmeasured; ~2s+ plan calls feel slow | Whole loop | 2 |
 | D5 | Full system prompt + app list + capability list resent every step (token cost) | Cost/latency | 2 |
 | D6 | Keyword risk gate is brittle (substring, listed languages only) | Safety | 3 |
-| D7 | Recent-tasks poisoned record still on Federico's device | Testing | 0 (clear it) |
+| D7 | Recent-tasks poisoned "already sent" record on device | Testing | 0 (KEEP it — it's the adversarial input the memory-is-history fix must withstand; do NOT clear) |
 
 ---
 
@@ -147,10 +147,20 @@ overlay — none verified live yet. Nothing else proceeds until this passes: ema
 the archetype of "fully agentic" (cross-app, chooser, compose, high-side-effect commit).
 
 **Activities**
-- [ ] `git pull` on the PC → `gradlew.bat installDebug` → grant **Display over other
-      apps** when prompted on first Go.
-- [ ] Clear poisoned memory (D7): Settings → Apps → Agent OS → Clear data (or add a
-      dev "clear memory" affordance if faster), re-enter credential.
+- [ ] `git pull` on the PC → `gradlew.bat installDebug`. A same-signature reinstall
+      keeps the credential, memory, AND accessibility grant — but MIUI often disables
+      the accessibility service on reinstall, so **verify `AGENT_SVC: connected` in
+      logcat** before testing (the run early-aborts if the service isn't bound).
+- [ ] **Do NOT clear memory or app data.** The poisoned "already sent" record IS the
+      test input for the memory-is-history fix; testing on cleared memory proves nothing.
+      (There is no in-app clear-memory button, and Clear data would also wipe the
+      credential + accessibility grant.)
+- [ ] Grant BOTH overlay permissions on MIUI: "Display over other apps" **and** the
+      separate MIUI "Display pop-up windows while running in background" (Autostart +
+      no-battery-restriction too). `canDrawOverlays` returns true even when the latter
+      still suppresses the window — this is the likely cause of a missing overlay.
+- [ ] Warm Gmail once (open it, signed in, set as default mail handler) so the
+      post-chooser perceive lands on a rendered compose, not a cold-start spinner.
 - [ ] Run **T-EMAIL-1**, **T-OVERLAY-1**, **T-MEM-1** (§6). Paste traces.
 - [ ] Any failure → fix → repeat. Log each new failure mode as a defect row in §2.
 
