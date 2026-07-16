@@ -217,6 +217,33 @@ class AgentLoopTest {
     }
 
     @Test
+    fun staleTarget_tellsTheModelTheActionDidNotRunSoItDoesNotFalselyFinish() {
+        // The approved target is gone at the pre-act re-read, so the action is dropped.
+        // The loop must feed that back ("did not run") — otherwise the re-plan tends to
+        // declare the task done when nothing was committed (the dropped-send bug).
+        val seenErrors = mutableListOf<String?>()
+        val perceiver = object : Perceiver {
+            private var n = 0
+            // step-0 perceive -> Battery; step-0 settle -> Gone (stale); then Battery.
+            override fun perceive(): Observation =
+                if (n++ == 1) screenWith("Gone") else screenWith("Battery")
+        }
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            private var calls = 0
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext): AgentAction {
+                seenErrors.add(context.lastError)
+                return if (calls++ == 0) AgentAction.Tap("Battery") else AgentAction.Done("ok")
+            }
+        }
+        loop(perceiver, provider, RecordingActuator(succeed = true)).run("open battery")
+
+        assertTrue(
+            "a dropped stale action must be reported as not having run",
+            seenErrors.any { it?.contains("did not run") == true },
+        )
+    }
+
+    @Test
     fun blankPerceive_waitsForTheScreenToPopulateBeforePlanning() {
         // A window mid-launch exposes a null tree; the loop must not plan against it
         // (the model would hallucinate "done"). It re-perceives until the real screen

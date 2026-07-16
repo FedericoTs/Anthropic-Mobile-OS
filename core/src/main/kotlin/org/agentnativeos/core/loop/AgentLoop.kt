@@ -189,6 +189,13 @@ class AgentLoop(
                 // screen settle and re-plan against the fresh tree — up to a cap.
                 if (staleStreak < maxStaleReplans) {
                     staleStreak++
+                    // Tell the model the action did NOT run so it re-attempts rather than
+                    // assuming progress. Critical after a confirmed high-side-effect step:
+                    // if an approved "send" is dropped as stale and we stay silent, the
+                    // re-plan tends to declare the task done when nothing was committed.
+                    lastError = "Your last action (${action.label()}) did not run — its target was no " +
+                        "longer on the screen, so it did NOT happen. Look at the current screen and " +
+                        "continue the task; do not assume it is done."
                     if (settleMs > 0) idle(settleMs)
                     continue
                 }

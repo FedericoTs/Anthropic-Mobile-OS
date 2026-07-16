@@ -63,13 +63,16 @@ home already suggesting your 9am timer because it learned you do that.
 ### Known defects / debts (each becomes work below)
 | # | Defect | Where it bites | Phase |
 |---|--------|----------------|-------|
-| D1 | Model narrates unverified success ("successfully sent") | Done summaries, task memory | 1 |
+| D1 | Model narrates unverified success ("successfully sent") — RECURS despite 7468726; prompt rules alone insufficient, verified-done now clearly required | Done summaries, task memory | 1 (now) |
 | D2 | Task memory records model claims as facts (poisoned memory) | Planning context | 1 |
 | D3 | Trust surface invisible while agent acts in another app (only confirm floats; no live step) | Cross-app runs | 1 |
 | D4 | Per-step latency unmeasured; ~2s+ plan calls feel slow | Whole loop | 2 |
 | D5 | Full system prompt + app list + capability list resent every step (token cost) | Cost/latency | 2 |
 | D6 | Keyword risk gate is brittle (substring, listed languages only) | Safety | 3 |
-| D7 | Recent-tasks poisoned "already sent" record on device | Testing | 0 (KEEP it — it's the adversarial input the memory-is-history fix must withstand; do NOT clear) |
+| D7 | Recent-tasks poisoned "already sent" record on device | Testing | 0 (KEEP it — adversarial input the memory-is-history fix must withstand; do NOT clear) |
+| D8 | **Approved high-side-effect action dropped as stale during the ~12s human-approval delay → silently re-planned → hallucinated done → email never sent** (2026-06-23 trace, steps=8). FIXED: stale re-plan now feeds "did not run" so the model retries instead of finishing. | AgentLoop settle | 0 (fixed) |
+| D9 | **Model relaunched Gmail by package after the compose invoke → abandoned the pre-filled draft.** FIXED: prompt forbids relaunch-by-package after a compose invoke; "sent" now requires the send tap executed THIS run. | Prompt / capability flow | 0 (fixed) |
+| D10 | Chooser thrashing — tapped "Solo una volta"/"Gmail" 5× before Gmail launched; recovers but slow/fragile | Chooser handling | 1 (playbooks help) |
 
 ---
 

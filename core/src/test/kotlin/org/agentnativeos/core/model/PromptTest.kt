@@ -34,8 +34,23 @@ class PromptTest {
         val system = Prompt.system().lowercase().replace(Regex("\\s+"), " ")
         assertTrue("invoking must be framed as opening a draft, not sending", system.contains("only opens a pre-filled draft"))
         assertTrue("must require tapping send/save to finish", system.contains("does not") && system.contains("send or save"))
-        assertTrue("must forbid done at the invoke", system.contains("never report done merely because you invoked"))
+        assertTrue("must forbid done at the invoke", system.contains("merely invoking the capability"))
         assertTrue("a blank screen is not done", system.contains("never report done from a blank screen"))
+    }
+
+    @Test
+    fun systemPromptForbidsRelaunchAfterComposeAndRequiresSendThisRun() {
+        // Regression: the agent relaunched Gmail by package after invoking send_email
+        // (abandoning the draft), and it declared a send done without executing the send.
+        val system = Prompt.system().lowercase().replace(Regex("\\s+"), " ")
+        assertTrue(
+            "must forbid relaunching the app by package (abandons the draft)",
+            system.contains("do not relaunch that app by package"),
+        )
+        assertTrue(
+            "sending requires executing the send tap this run",
+            system.contains("sent a message only after you tapped its send button in this run"),
+        )
     }
 
     @Test
