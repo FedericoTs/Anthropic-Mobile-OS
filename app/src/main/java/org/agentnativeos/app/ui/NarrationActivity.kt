@@ -65,7 +65,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
         AgentSession.setListener(this)
         // Render anything already in flight, then start a run if requested.
-        AgentSession.snapshot().forEach { addRow(it) }
+        AgentSession.snapshot().forEach { if (it !is NarrationEvent.StepTiming) addRow(it) }
         when {
             AgentSession.running -> Unit // already in flight; we just render it
             intent.getBooleanExtra(EXTRA_DEMO, false) -> NarrationDemo.run()
@@ -117,7 +117,10 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     // --- AgentSession.Listener (callbacks arrive on the main thread) ---
 
-    override fun onEvent(event: NarrationEvent) = addRow(event)
+    override fun onEvent(event: NarrationEvent) {
+        if (event is NarrationEvent.StepTiming) return // instrumentation only
+        addRow(event)
+    }
 
     override fun onConfirmRequested(action: AgentAction, reason: String) {
         confirmAction.text = reason

@@ -53,7 +53,16 @@ class AnthropicClient(
             linkedMapOf(
                 "model" to model.name,
                 "max_tokens" to maxTokens,
-                "system" to system,
+                // The system prompt is identical every step (and across runs), so mark it a
+                // cached prefix: the model processes it once and reads it back cheaply on the
+                // next call within the cache window — lower latency + cost on multi-step tasks.
+                "system" to listOf(
+                    linkedMapOf(
+                        "type" to "text",
+                        "text" to system,
+                        "cache_control" to linkedMapOf("type" to "ephemeral"),
+                    ),
+                ),
                 "messages" to listOf(linkedMapOf("role" to "user", "content" to user)),
             ),
         )

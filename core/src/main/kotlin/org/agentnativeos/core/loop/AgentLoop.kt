@@ -107,6 +107,7 @@ class AgentLoop(
             //    (e.g. an app opening after an intent/chooser) momentarily exposes a
             //    null/empty accessibility tree; handed nothing, the model tends to
             //    hallucinate "done". Settle and re-read until it populates, up to a cap.
+            val perceiveStart = clock()
             var observation = perceiver.perceive()
             var emptyWaits = 0
             while (observation.isEmpty && emptyWaits < maxEmptyPerceives) {
@@ -114,6 +115,7 @@ class AgentLoop(
                 if (settleMs > 0) idle(settleMs)
                 observation = perceiver.perceive()
             }
+            val perceiveMs = clock() - perceiveStart
             bus.emit(
                 NarrationEvent.Perceive(
                     corr, clock(),
@@ -132,6 +134,7 @@ class AgentLoop(
 
             // 2) plan — the screen goes in as untrusted data, never instructions
             bus.emit(NarrationEvent.Plan(corr, clock(), intent))
+            val planStart = clock()
             val action = provider.nextAction(
                 PlanningContext(
                     intent = intent,
@@ -144,6 +147,8 @@ class AgentLoop(
                     lastError = lastError,
                 ),
             )
+            // Latency breakdown for this step (the model call usually dominates).
+            bus.emit(NarrationEvent.StepTiming(corr, clock(), perceiveMs, clock() - planStart))
 
             // terminal actions
             when (action) {

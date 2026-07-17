@@ -375,6 +375,20 @@ class AgentLoopTest {
     }
 
     @Test
+    fun emitsPerStepTimingForInstrumentation() {
+        val audit = AuditLog()
+        loop(
+            StaticPerceiver(screenWith("Battery")),
+            org.agentnativeos.core.model.ScriptedModelProvider(
+                listOf(AgentAction.Tap("Battery"), AgentAction.Done("done")),
+            ),
+            RecordingActuator(succeed = true), audit = audit,
+        ).run("open battery")
+
+        assertTrue("each step reports a latency breakdown", audit.entries().any { it is NarrationEvent.StepTiming })
+    }
+
+    @Test
     fun emptyScreenStillTerminatesViaDone() {
         val empty = Observation("com.test", FakeNode(), 0L)
         val result = loop(

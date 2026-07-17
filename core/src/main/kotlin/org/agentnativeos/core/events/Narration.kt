@@ -91,6 +91,17 @@ sealed interface NarrationEvent {
         override fun audit() = "done summary=$summary"
     }
 
+    /** Per-step latency (instrumentation only — kept out of the visible feed). */
+    data class StepTiming(
+        override val correlation: Correlation,
+        override val atMs: Long,
+        val perceiveMs: Long,
+        val planMs: Long,
+    ) : NarrationEvent {
+        override fun live() = "" // instrumentation, not narration
+        override fun audit() = "perf perceive=${perceiveMs}ms plan=${planMs}ms"
+    }
+
     /** The agent checking its own "done" claim against the live screen before finishing. */
     data class Verify(
         override val correlation: Correlation,

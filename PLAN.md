@@ -232,17 +232,21 @@ over another app and Stop works from it.
 D4/D5. Don't optimize blind (decision 2A): measure first, then take the two obvious
 wins. Target feel: simple step < 2s, capability one-shots < 4s end-to-end.
 
-**2.1 Instrument** — per-step `perceiveMs / planMs / actMs / settleMs` carried on
-narration events; `AgentController` logs a per-run summary line
-(`AGENT_PERF total=…s steps=… plan_avg=…ms tokens_in/out=…`). Token counts read from
-the API response `usage` block and logged per call.
-**2.2 Prompt caching** — mark the static prefix (system prompt; capability catalog;
-app inventory, which changes rarely) with `cache_control` in `AnthropicClient`.
-Expected: large input-token cut and faster TTFT on steps ≥2. Measure before/after
-on the same scripted task; record numbers in this file.
+**2.1 Instrument — SHIPPED 2026-06-23.** `AgentLoop` measures `perceiveMs` + `planMs`
+per step (via the injected `clock`) and emits `NarrationEvent.StepTiming` → logged as
+`perf perceive=…ms plan=…ms` under AGENT (filtered out of the visible feed). The model
+call (`planMs`) is the known ~3s dominant cost (already visible as the plan→propose gap
+in traces). STILL TODO: token counts from the API `usage` block (needs client plumbing);
+`actMs`/`settleMs`.
+**2.2 Prompt caching — SHIPPED 2026-06-23.** `AnthropicClient` sends the system prompt as
+a `cache_control: ephemeral` content block, so it's processed once and read back cheaply
+on later steps within the cache window. NOTE: the cache minimum is ~2048 tokens on Haiku
+(the default), so the system-only prefix may be under threshold on Haiku — if `perf`
+numbers don't drop, the follow-up is to also cache the capability catalog + app inventory
+(move them into the cached prefix). Clearly helps on Sonnet/Opus (1024-token minimum).
 **2.3 Screen budget** — `describe()` already caps at 150 lines; prioritize
 interactive nodes ([input]/[tap]) before [text] when trimming, and log the line
-count per perceive. Only escalate to smarter pruning if numbers say so.
+count per perceive. Only escalate to smarter pruning if numbers say so. (NOT started.)
 
 **Unit tests:** timing fields populated (fake clock); describe() prioritization; client
 sends cache_control and parses usage.

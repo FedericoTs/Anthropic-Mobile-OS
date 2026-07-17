@@ -34,7 +34,9 @@ class AnthropicClientTest {
         assertEquals("https://api.anthropic.com/v1/messages", transport.url)
         assertEquals("sk-x", transport.headers["x-api-key"])
         assertTrue(transport.body.contains(""""model":"claude-haiku-4-5""""))
-        assertTrue(transport.body.contains(""""system":"sys""""))
+        // The system prompt rides as a cached content block (prompt caching).
+        assertTrue(transport.body.contains(""""system":[{"type":"text","text":"sys""""))
+        assertTrue(transport.body.contains(""""cache_control":{"type":"ephemeral"}"""))
     }
 
     @Test
