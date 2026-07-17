@@ -62,8 +62,12 @@ home already suggesting your 9am timer because it learned you do that.
 - **Floating confirm overlay** — the confirm card floated over Gmail on the successful email
   run ✅; the live-step half of the overlay (D3) is not built.
 - **Undo affordance** — unit-tested; not yet exercised on device.
-- **Autonomous mode** (full silent auto-approve, Settings toggle, default OFF) — DECIDED,
-  not built; the immediate next feature after verified-done is device-confirmed.
+- **Autonomous mode** (full silent auto-approve, Settings toggle, default OFF) — BUILT
+  2026-06-23: `AutonomyPreferences` + a Settings switch with a danger warning; when ON the
+  ConfirmationHandler auto-approves every high-side-effect action (no card, no pause) while
+  the gate still CLASSIFIES it (the feed still flags high-side-effect + shows "⚡ Autonomous").
+  Awaits on-device use. **Only flip ON once verified-done is confirmed sending reliably** —
+  auto-approving sends on an unproven loop is the danger case.
 - **Multi-agent coordinator** (`core/multiagent/`) — Coordinator + ActuationScheduler
   + SubAgent exist with green tests against fakes; **not wired to the device at all**.
 

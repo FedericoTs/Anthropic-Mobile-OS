@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import org.agentnativeos.app.AgentController
 import org.agentnativeos.app.AgentSession
+import org.agentnativeos.app.AutonomyPreferences
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.ModelPreferences
 import org.agentnativeos.app.NarrationDemo
@@ -78,11 +79,22 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         val store = CredentialStore(this)
         val auth = Auth.choose(store.apiKey, store.oauthToken) ?: return
         val model = ModelPreferences(this).selected
-        AgentController.run(
-            intentText,
-            ClaudeModelProvider(auth, model),
-            ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) },
-        )
+        val autonomous = AutonomyPreferences(this).autonomous
+        // Full silent auto-approve when autonomous (opt-in; the user owns the risk). The
+        // gate still CLASSIFIES the action, so the feed still flags it high-side-effect —
+        // autonomous mode removes the tap, not the transparency.
+        val confirmer = if (autonomous) {
+            ConfirmationHandler { _, _ -> true }
+        } else {
+            ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) }
+        }
+        if (autonomous) {
+            findViewById<TextView>(R.id.txt_intent).apply {
+                text = getString(R.string.narration_autonomous)
+                setTextColor(ContextCompat.getColor(this@NarrationActivity, R.color.warn))
+            }
+        }
+        AgentController.run(intentText, ClaudeModelProvider(auth, model), confirmer)
     }
 
     override fun onResume() {

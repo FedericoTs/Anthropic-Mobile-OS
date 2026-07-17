@@ -35,6 +35,13 @@
     <string name="settings_model_explainer">Pick the model that runs your intents. The cheapest is the default — step up for harder, multi-app tasks. Takes effect on your next run.</string>
     <string name="settings_model_selected">Now using %1$s.</string>
 
+    <string name="settings_autonomy_header">Autonomous mode</string>
+    <string name="settings_autonomy_explainer">Off by default, the agent asks before any high side-effect action (send, pay, delete). Turn this on and it runs those WITHOUT asking — no Approve card, no pause. Faster and hands-free, but it can send or delete on its own. You own the risk.</string>
+    <string name="settings_autonomy_switch">Run without asking for approval</string>
+    <string name="settings_autonomy_on">Autonomous mode ON — the agent will act without asking.</string>
+    <string name="settings_autonomy_off">Autonomous mode off — you\'ll be asked before high side-effect actions.</string>
+    <string name="narration_autonomous">⚡ Autonomous — approvals are automatic</string>
+
     <string name="settings_apikey_header">API key</string>
     <string name="settings_key_hint">Anthropic API key (sk-…)</string>
     <string name="settings_save">Save key</string>

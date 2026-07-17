@@ -10,7 +10,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import org.agentnativeos.app.AutonomyPreferences
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.ModelPreferences
 import org.agentnativeos.app.R
@@ -26,14 +28,24 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var store: CredentialStore
     private lateinit var models: ModelPreferences
+    private lateinit var autonomy: AutonomyPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         store = CredentialStore(this)
         models = ModelPreferences(this)
+        autonomy = AutonomyPreferences(this)
 
         renderModelPicker()
+
+        findViewById<SwitchCompat>(R.id.switch_autonomy).apply {
+            isChecked = autonomy.autonomous
+            setOnCheckedChangeListener { _, checked ->
+                autonomy.autonomous = checked
+                toast(getString(if (checked) R.string.settings_autonomy_on else R.string.settings_autonomy_off))
+            }
+        }
 
         val keyInput = findViewById<EditText>(R.id.input_key)
         val tokenInput = findViewById<EditText>(R.id.input_token)

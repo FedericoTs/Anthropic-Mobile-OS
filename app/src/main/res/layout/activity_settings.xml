@@ -52,6 +52,36 @@
             android:layout_marginBottom="28dp"
             android:orientation="vertical" />
 
+        <!-- Autonomous mode: opt-in, default OFF — auto-approves high side-effect actions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:text="@string/settings_autonomy_header"
+            android:textColor="@color/text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="10dp"
+            android:text="@string/settings_autonomy_explainer"
+            android:textColor="@color/warn"
+            android:textSize="13sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_autonomy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            android:background="@drawable/bg_input"
+            android:minHeight="56dp"
+            android:paddingHorizontal="16dp"
+            android:text="@string/settings_autonomy_switch"
+            android:textColor="@color/text"
+            android:textSize="16sp" />
+
         <!-- API key (the default, supported path) -->
         <TextView
             android:layout_width="wrap_content"
