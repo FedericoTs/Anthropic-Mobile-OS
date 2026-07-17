@@ -299,25 +299,25 @@ The headline of this plan. Design honors the TODOS battery/cost warning and the
 ambient-correctness question: **heuristics first, zero model calls in the always-on
 path, on-device only, suggestions never act.**
 
-**4.1 Signals (on-device, privacy-first)**
-- Primary (no new permission): task memory — intent text, timestamps, outcomes,
-  verified flag. Secondary (no permission): hour-of-day, day-class (weekday/weekend),
-  charging state. Optional (behind explicit opt-in toggle + `PACKAGE_USAGE_STATS`
-  special permission, graceful degradation without it): app-open counts from
-  `UsageStatsManager` to suggest app-related intents. **No location in v1.**
-- `core/usage/`: `UsageEvent`, `UsageLog` (append-capped, codec like TaskMemory).
+**4.1 Signals — ENGINE SHIPPED 2026-06-23 (pure core, `core/predict/`).**
+- `UsageEvent(intent, atMs, hourOfDay, dayClass)` + `TimeBucket` (5 slices) + `DayClass`;
+  `UsageEvent.at/from` derive the time tags from a timestamp + `ZoneId` (java.time, minSdk 26);
+  `normalizeIntent` groups "the same intent" (exact-after-normalization for v1).
+- Primary signal = task memory (intent + atMs, permission-free), mapped via `UsageEvent.from`.
+  STILL TODO: the app wiring (map `PersistentTaskMemory` → events with the device zone);
+  optional opt-in `UsageStatsManager` app-open signal; **no location in v1**.
 
-**4.2 Pattern mining + suggestion engine (pure Kotlin, fully unit-testable)**
-- `PatternMiner`: recency-weighted frequency of normalized intents per
-  (hour-bucket × day-class); score = Σ decay^ageDays (half-life ~14 days).
-- `SuggestionEngine` policy, tuned for *calm*:
-  - max **2** suggestions; confidence threshold; not if run in the last N hours;
-  - **cooldowns from feedback**: dismissed → bucket-muted 7 days; ignored (shown,
-    never tapped) 5× → muted; tapped → reinforced;
-  - global throttle: rolling tap-rate < 20% → show at most 1, < 10% → show none for
-    a week (the ambient-correctness eval, automated).
-- Every shown/tapped/dismissed event is logged (`SuggestionRecord`) — that log IS
-  the eval dataset (§7).
+**4.2 Pattern mining + suggestion engine — SHIPPED 2026-06-23 (14 tests).**
+- `PatternMiner.rank`: recency-weighted frequency per (bucket × day-class); score =
+  Σ 0.5^(ageDays/halfLife), halfLife 14d. Only same-bucket + same-day-class events count
+  (a 9am-weekday timer surfaces at 9am weekday, not evening, not weekend — tested).
+- `SuggestionEngine.suggest(history, now, feedback)`, tuned for *calm*: minSupport 3,
+  confidence threshold, suppress-if-done-in-last-3h, per-intent cooldowns (dismissed → muted
+  7d; shown ≥5 never tapped → muted), global throttle (tapRate <20% → cap 1, <10% → silent),
+  max 2. Returns inert `Suggestion` data — no Actuator anywhere in the package, so nothing
+  runs without a UI tap (tested).
+- STILL TODO: persist `SuggestionFeedback` (codec + app store); the `SuggestionRecord`
+  shown/tapped/dismissed log = the eval dataset (§7).
 
 **4.3 Predictive home (app)** — per the approved `predictive-home.png` mockup (v1).
 - Suggestion chips above the recent list: quiet `--surface` cards, plain words
