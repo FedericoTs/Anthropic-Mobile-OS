@@ -70,7 +70,15 @@ object AgentSession {
     /** Called from the agent thread (loop or demo). */
     fun emit(event: NarrationEvent) {
         synchronized(events) { events.add(event) }
-        main.post { listener?.onEvent(event) }
+        main.post {
+            listener?.onEvent(event)
+            // While the agent acts in another app (our UI backgrounded), stream the live
+            // step into the floating overlay so it can be watched, not just approved.
+            if (running && !uiForeground && event !is NarrationEvent.StepTiming) {
+                val line = event.live()
+                if (line.isNotBlank()) OverlayConfirm.showStep(line)
+            }
+        }
     }
 
     /** Loop-thread blocking confirm: returns the user's decision (false if stopped). */

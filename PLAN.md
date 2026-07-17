@@ -76,7 +76,7 @@ home already suggesting your 9am timer because it learned you do that.
 |---|--------|----------------|-------|
 | D1 | Model narrates unverified success ("successfully sent") — RECURRED despite 7468726. FIXED (core): verified-done — the loop makes a skeptical screen-only verify call before accepting any `Done`; unverifiable claims re-plan, then honestly abort. Unit-tested; needs on-device confirmation. | Done summaries, task memory | 1 (shipped, verify live) |
 | D2 | Task memory records model claims as facts (poisoned memory) | Planning context | 1 |
-| D3 | Trust surface invisible while agent acts in another app (only confirm floats; no live step) | Cross-app runs | 1 |
+| D3 | Trust surface invisible while agent acts in another app — FIXED: the floating overlay now streams the live step (not just the confirm) over the driven app; awaiting device confirm | Cross-app runs | 1 (shipped) |
 | D4 | Per-step latency unmeasured; ~2s+ plan calls feel slow | Whole loop | 2 |
 | D5 | Full system prompt + app list + capability list resent every step (token cost) | Cost/latency | 2 |
 | D6 | Keyword risk gate is brittle (substring, listed languages only) | Safety | 3 |
@@ -205,14 +205,15 @@ the demo's credibility rests on this.
 - Memory prompt renders unverified completions as `[completed?]` so a past
   overclaim can't masquerade as fact (fixes D2 at the source).
 
-**1.2 Live-step overlay (app)** — the other half of D3, on the `OverlayConfirm` base.
-- Extend the floating window: when the run is active and `uiForeground=false`, show a
-  compact one-line live step (glyph + label, mono per DESIGN.md) + **Stop**; the
-  confirm card variant swaps in when a confirm is pending (existing behavior).
-- Same non-focusable constraint (must never steal the actuator's target window).
-  Dismissible (collapses to a small dot per DESIGN restraint); reappears on confirm.
-- Honor reduced-motion; nothing in the overlay ever renders secrets (it renders only
-  our own narration labels, which are already redacted at perception).
+**1.2 Live-step overlay (app) — SHIPPED 2026-06-23 (awaiting device confirm).**
+- `OverlayConfirm` now has two modes sharing one non-focusable window: a live-step STRIP
+  (the current action, mono per DESIGN, + Stop) and the CONFIRM card (existing). The card
+  outranks the strip (`confirming` flag) so a pending confirm is never hidden.
+- `AgentSession.emit` streams each step's `live()` into `showStep(...)` whenever the run is
+  active AND our UI is backgrounded (`uiForeground=false`) — so you watch it act over
+  another app, not just approve. Text updates in place (no window churn); Stop is on the
+  strip. Renders only our own (already-redacted) narration labels — never screen content.
+- STILL TODO: collapse-to-dot dismissal (DESIGN restraint); a glyph per step kind.
 
 **Unit tests** (core): done-with-actions triggers exactly one verify call; verified
 false→loop continues with lastError; verified true→Completed(verified); done at

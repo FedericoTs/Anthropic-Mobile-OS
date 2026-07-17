@@ -19,23 +19,21 @@ import androidx.core.content.ContextCompat
 import org.agentnativeos.app.device.AgentAccessibilityService
 
 /**
- * The confirm gate, floated OVER whatever app the agent is driving.
+ * The floating trust surface, pinned OVER whatever app the agent is driving.
  *
- * When the agent acts in a third-party app (e.g. tapping Send in Gmail), our own
- * narration screen is backgrounded — so a high-side-effect confirm would surface
- * where the user can't see it, exactly when it matters most. This puts the same
- * trust card (caution + drafted action + Approve / Skip / Stop) in a small floating
- * window pinned to the thumb zone, on top of the foreground app.
+ * Two modes share one non-focusable window in the thumb zone:
+ *  - [showStep] — a compact live-step strip (the agent's current action + Stop), so you
+ *    can WATCH it think while it acts in another app, not just approve.
+ *  - [show] — the confirm card (caution + drafted action + Approve / Skip / Stop), which
+ *    takes priority: a pending confirm must never be hidden behind the live strip.
  *
- * It is NON-FOCUSABLE on purpose: it must not become the active window, or the
- * accessibility actuator would target the overlay instead of the app beneath it.
- * Needs the user-granted "Display over other apps" permission; without it [show] is
- * a no-op and the in-app confirm card remains the fallback. Resolving routes back
- * through [AgentSession], the same path the in-app buttons use.
+ * NON-FOCUSABLE on purpose: it must not become the active window, or the accessibility
+ * actuator would target the overlay instead of the app beneath it. Needs the user-granted
+ * "Display over other apps" permission; without it both are no-ops and the in-app feed is
+ * the fallback. Buttons route back through [AgentSession], the same path as the in-app UI.
  */
-// The held View references a Context, but it is bounded: hide() removes it and nulls
-// the reference on every confirm resolution / stop / run finish, so it lives only for
-// the duration of a pending confirm (by design). This is the standard overlay-manager
+// The held View references a Context, but it is bounded: hide() removes it and nulls the
+// reference on every confirm resolution / stop / run finish. Standard overlay-manager
 // pattern, not an unbounded static leak.
 @SuppressLint("StaticFieldLeak")
 object OverlayConfirm {
@@ -43,30 +41,42 @@ object OverlayConfirm {
     private val main = Handler(Looper.getMainLooper())
     private var view: View? = null
     private var windowManager: WindowManager? = null
+    private var stepLabel: TextView? = null // the live strip's text, for in-place updates
+    private var confirming = false // a confirm card is up; it outranks the live strip
 
-    /** Whether the floating confirm can be shown (special permission granted). */
+    /** Whether the floating overlay can be shown (special permission granted). */
     fun canDraw(context: Context): Boolean = Settings.canDrawOverlays(context)
 
+    /** Stream/refresh the live step. No-op while a confirm card is showing. */
+    fun showStep(text: String) {
+        val ctx = AgentAccessibilityService.instance ?: return
+        if (!canDraw(ctx)) return
+        main.post {
+            if (confirming) return@post
+            stepLabel?.let { it.text = text; return@post } // update in place, no re-add
+            val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val strip = buildStrip(ctx, text)
+            try {
+                wm.addView(strip, overlayParams(ctx))
+                view = strip
+                windowManager = wm
+            } catch (_: Exception) {
+                stepLabel = null // add raced a teardown / revoke — fall back to the in-app feed
+            }
+        }
+    }
+
+    /** Show the confirm card; it replaces the live strip and outranks it until resolved. */
     fun show(reason: String) {
         val ctx = AgentAccessibilityService.instance ?: return
-        if (!canDraw(ctx)) return // graceful fallback to the in-app card
+        if (!canDraw(ctx)) return
         main.post {
-            if (view != null) return@post
+            confirming = true
+            removeCurrent() // drop the live strip if present
             val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val card = buildCard(ctx, reason)
-            val lp = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                // Not focusable: never steal the active window from the app the agent acts on.
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT,
-            ).apply {
-                gravity = Gravity.BOTTOM
-                y = dp(ctx, 24)
-            }
             try {
-                wm.addView(card, lp)
+                wm.addView(card, overlayParams(ctx))
                 view = card
                 windowManager = wm
                 slideUp(ctx, card)
@@ -78,15 +88,34 @@ object OverlayConfirm {
 
     fun hide() {
         main.post {
-            val v = view ?: return@post
-            try {
-                windowManager?.removeView(v)
-            } catch (_: Exception) {
-                // Already gone — ignore.
-            }
-            view = null
+            removeCurrent()
             windowManager = null
+            confirming = false
         }
+    }
+
+    /** Remove whatever overlay is showing; caller resets [windowManager]/[confirming]. */
+    private fun removeCurrent() {
+        val v = view ?: return
+        try {
+            windowManager?.removeView(v)
+        } catch (_: Exception) {
+            // Already gone — ignore.
+        }
+        view = null
+        stepLabel = null
+    }
+
+    private fun overlayParams(ctx: Context) = WindowManager.LayoutParams(
+        WindowManager.LayoutParams.MATCH_PARENT,
+        WindowManager.LayoutParams.WRAP_CONTENT,
+        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+        // Not focusable: never steal the active window from the app the agent acts on.
+        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+        PixelFormat.TRANSLUCENT,
+    ).apply {
+        gravity = Gravity.BOTTOM
+        y = dp(ctx, 24)
     }
 
     /** DESIGN: confirm slides up from the thumb zone; honor reduced-motion. */
@@ -98,6 +127,43 @@ object OverlayConfirm {
         card.translationY = dp(ctx, 64).toFloat()
         card.alpha = 0f
         card.animate().translationY(0f).alpha(1f).setDuration(300).start()
+    }
+
+    /** The live-step strip: the agent's current action (mono, per DESIGN) + a Stop. */
+    private fun buildStrip(ctx: Context, text: String): View {
+        fun col(id: Int) = ContextCompat.getColor(ctx, id)
+        val pad = dp(ctx, 16)
+        val label = TextView(ctx).apply {
+            this.text = text
+            setTextColor(col(R.color.text))
+            textSize = 14f
+            typeface = Typeface.MONOSPACE
+            maxLines = 2
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        stepLabel = label
+        val stop = Button(ctx).apply {
+            this.text = ctx.getString(R.string.narration_stop)
+            setTextColor(col(R.color.on_accent))
+            backgroundTintList = ColorStateList.valueOf(col(R.color.accent))
+            isAllCaps = false
+            setOnClickListener { AgentSession.requestStop() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(ctx, 44),
+            ).apply { marginStart = dp(ctx, 12) }
+        }
+        val strip = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(ctx, R.drawable.bg_input)
+            setPadding(pad, dp(ctx, 10), pad, dp(ctx, 10))
+            addView(label)
+            addView(stop)
+        }
+        return FrameLayout(ctx).apply {
+            setPadding(pad, 0, pad, 0)
+            addView(strip)
+        }
     }
 
     private fun buildCard(ctx: Context, reason: String): View {
