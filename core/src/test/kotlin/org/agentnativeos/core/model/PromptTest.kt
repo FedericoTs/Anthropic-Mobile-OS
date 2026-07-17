@@ -14,6 +14,9 @@ class PromptTest {
         assertTrue("is a strict verifier", sys.contains("strict verifier"))
         assertTrue("judges the current screen only", sys.contains("from the current screen only"))
         assertTrue("the model's summary/memory is not evidence", sys.contains("are not evidence"))
+        assertTrue("a past run never counts", sys.contains("never a valid reason"))
+        assertTrue("a question is done once answered", sys.contains("if the intent is a question"))
+        assertTrue("an action with no steps is not done", sys.contains("claims an action is done, it is not done"))
         assertTrue("a still-open compose/draft is not done", sys.contains("draft means it is not done"))
         assertTrue("emits a verified verdict", sys.contains("\"verified\""))
 

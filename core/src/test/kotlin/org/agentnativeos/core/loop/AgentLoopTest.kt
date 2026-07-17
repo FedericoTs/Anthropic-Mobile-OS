@@ -240,7 +240,9 @@ class AgentLoopTest {
     }
 
     @Test
-    fun verifiedDone_skipsVerificationForAQuestionAnsweredAtStepZero() {
+    fun verifiedDone_checksButAcceptsAQuestionAnsweredAtStepZero() {
+        // Every done is verified now (even at step 0), but a question is complete once
+        // answered — the verifier accepts it, so the run still finishes.
         var verifyCalls = 0
         val provider = object : org.agentnativeos.core.model.ModelProvider {
             override fun nextAction(context: org.agentnativeos.core.model.PlanningContext) =
@@ -256,7 +258,42 @@ class AgentLoopTest {
         val result = loop(StaticPerceiver(screenWith("Home")), provider, RecordingActuator()).run("what is 6x7?")
 
         assertTrue(result is LoopResult.Completed)
-        assertEquals("no actions taken means nothing to verify", 0, verifyCalls)
+        assertEquals("the done is checked even at step 0", 1, verifyCalls)
+    }
+
+    @Test
+    fun verifiedDone_catchesAFalseDoneClaimedAtStepZeroWithNoActions() {
+        // The exact on-device failure: the model reads a stale "already sent" memory and
+        // claims done at step 0 with ZERO actions. Verified-done must fire on an empty
+        // history, reject it, and make the agent actually do the task.
+        val provider = object : org.agentnativeos.core.model.ModelProvider {
+            private var plan = 0
+            override fun nextAction(context: org.agentnativeos.core.model.PlanningContext): AgentAction =
+                when (plan++) {
+                    0 -> AgentAction.Done("already sent in a previous run") // false step-0 claim
+                    1 -> AgentAction.Tap("Next") // after rejection, actually act
+                    else -> AgentAction.Done("done for real")
+                }
+            private var checks = 0
+            override fun verify(
+                context: org.agentnativeos.core.model.PlanningContext,
+                claimedSummary: String,
+            ) = if (checks++ == 0) {
+                org.agentnativeos.core.model.VerifyResult(false, "no actions taken this run")
+            } else {
+                org.agentnativeos.core.model.VerifyResult(true, "")
+            }
+        }
+        val audit = AuditLog()
+        val result = loop(
+            StaticPerceiver(screenWith("Next")), provider, RecordingActuator(succeed = true), audit = audit,
+        ).run("send an email")
+
+        assertTrue(result is LoopResult.Completed)
+        assertEquals("done for real", (result as LoopResult.Completed).summary)
+        // It did NOT finish at step 0 on the false claim — it rejected it and acted.
+        assertTrue("rejected the step-0 claim", audit.entries().any { it is NarrationEvent.Verify && !it.ok })
+        assertTrue("then actually acted", audit.entries().any { it is NarrationEvent.Execute && it.ok })
     }
 
     @Test

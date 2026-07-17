@@ -148,40 +148,38 @@ class AgentLoop(
             // terminal actions
             when (action) {
                 is AgentAction.Done -> {
-                    // Verify a claimed completion against the live screen before accepting
-                    // it. The model has repeatedly hallucinated "done" (memory poisoning, an
-                    // unsent draft); a skeptical second look catches a claim the screen does
-                    // not support. Skip for a task with no actions (a question answered at
-                    // step 0 has nothing on screen to check).
-                    if (history.isNotEmpty()) {
-                        val verdict = provider.verify(
-                            PlanningContext(
-                                intent = intent,
-                                untrustedScreen = UntrustedObservation.wrap(screen),
-                                stepIndex = step,
-                                history = history.toList(),
-                                availableApps = availableApps,
-                                capabilities = capabilities,
-                                recentTasks = recentTasks,
-                            ),
-                            action.summary,
-                        )
-                        bus.emit(NarrationEvent.Verify(corr, clock(), verdict.verified, verdict.reason))
-                        if (!verdict.verified) {
-                            doneVerifyFails++
-                            if (doneVerifyFails < maxDoneVerifyFails) {
-                                // Not actually done — feed the reason back and keep working.
-                                lastError = "You reported the task done, but a check of the current " +
-                                    "screen says it is NOT complete: ${verdict.reason}. Keep going and " +
-                                    "actually finish it."
-                                continue
-                            }
-                            // Claimed done but never verifiable — hand off honestly rather than
-                            // record a success we cannot confirm (critical for autonomous runs).
-                            val reason = "reported done but could not verify completion: ${verdict.reason}"
-                            bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
-                            return LoopResult.Aborted(reason, gotAsFar, step)
+                    // Verify EVERY claimed completion against the live screen before accepting
+                    // it — INCLUDING a "done" at step 0 with no actions, which is exactly how
+                    // the model shortcuts an action task to a false "done" (citing a stale
+                    // memory record). The verifier treats a question as complete once answered,
+                    // but an action claimed with NO steps this run is not done.
+                    val verdict = provider.verify(
+                        PlanningContext(
+                            intent = intent,
+                            untrustedScreen = UntrustedObservation.wrap(screen),
+                            stepIndex = step,
+                            history = history.toList(),
+                            availableApps = availableApps,
+                            capabilities = capabilities,
+                            recentTasks = recentTasks,
+                        ),
+                        action.summary,
+                    )
+                    bus.emit(NarrationEvent.Verify(corr, clock(), verdict.verified, verdict.reason))
+                    if (!verdict.verified) {
+                        doneVerifyFails++
+                        if (doneVerifyFails < maxDoneVerifyFails) {
+                            // Not actually done — feed the reason back and keep working.
+                            lastError = "You reported the task done, but a check of the current " +
+                                "screen says it is NOT complete: ${verdict.reason}. You have not " +
+                                "actually done it yet this run — stop citing past runs and do it now."
+                            continue
                         }
+                        // Claimed done but never verifiable — hand off honestly rather than
+                        // record a success we cannot confirm (critical for autonomous runs).
+                        val reason = "reported done but could not verify completion: ${verdict.reason}"
+                        bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
+                        return LoopResult.Aborted(reason, gotAsFar, step)
                     }
                     bus.emit(NarrationEvent.Done(corr, clock(), action.summary))
                     return LoopResult.Completed(action.summary, step)
