@@ -81,6 +81,25 @@ class PromptTest {
     }
 
     @Test
+    fun decomposePromptDemandsSelfContainedGoalsAndAllowsNoForcedSplit() {
+        val sys = Prompt.decomposeSystem().lowercase().replace(Regex("\\s+"), " ")
+        assertTrue("caps the fan-out", sys.contains("at most 3"))
+        assertTrue("each goal must stand alone", sys.contains("self-contained"))
+        assertTrue("single tasks stay single", sys.contains("return exactly one goal"))
+        assertTrue("emits a goals object", sys.contains("\"goals\""))
+        assertTrue(Prompt.decomposeUser("find pizza and text Marco").contains("find pizza and text Marco"))
+    }
+
+    @Test
+    fun compoundHeuristicCatchesConnectivesWithoutOvertriggering() {
+        assertTrue(Compound.looksCompound("find a pizzeria nearby and text the address to Marco"))
+        assertTrue(Compound.looksCompound("apri gmail e poi imposta un timer"))
+        assertTrue(Compound.looksCompound("set a timer; open maps"))
+        assertTrue(!Compound.looksCompound("set a 5 minute timer"))
+        assertTrue(!Compound.looksCompound("manda una mail a Marco"))
+    }
+
+    @Test
     fun userPromptFramesRecentTasksAsHistoryNotCompletion() {
         val ctx = PlanningContext(
             intent = "send an email to a@b.com",

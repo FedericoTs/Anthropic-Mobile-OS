@@ -75,6 +75,21 @@ object Prompt {
         append(ActionJson.SCHEMA_HINT)
     }
 
+    /** System prompt for splitting a compound intent into independent sub-goals. */
+    fun decomposeSystem(): String = buildString {
+        appendLine("You split a user's phone intent into AT MOST 3 sub-goals for separate agents.")
+        appendLine("Each goal MUST be fully self-contained — repeat every detail it needs (recipients,")
+        appendLine("message content, app names, amounts): the agent executing it cannot see the other")
+        appendLine("goals or the original sentence. Keep the user's own language and wording.")
+        appendLine("If the intent is really ONE task, return exactly one goal (do not force a split).")
+        appendLine("Order goals so earlier ones produce anything later ones need.")
+        appendLine()
+        appendLine("OUTPUT: reply with EXACTLY ONE JSON object and nothing else:")
+        appendLine("""{"goals": ["<goal 1>", "<goal 2>"]}""")
+    }
+
+    fun decomposeUser(intent: String): String = "Intent: $intent"
+
     /** System prompt for the completion verifier — a strict, screen-only second opinion. */
     fun verifySystem(): String = buildString {
         appendLine("You are a STRICT verifier for an agent that acts on a phone. The agent claims it has")

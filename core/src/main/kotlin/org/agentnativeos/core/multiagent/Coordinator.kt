@@ -23,6 +23,8 @@ class Coordinator(
     private val actuator: Actuator,
     private val gate: PolicyGate = PolicyGate(),
     private val maxRounds: Int = 50,
+    /** Pause between rounds / on an empty tree so async screen transitions settle. */
+    private val idle: () -> Unit = {},
 ) {
     private val scheduler = ActuationScheduler(perceiver, actuator, gate)
 
@@ -37,6 +39,13 @@ class Coordinator(
 
         while (active.isNotEmpty() && round < maxRounds) {
             val observation = perceiver.perceive()
+            // Never plan a round against a blank mid-launch tree — the same lesson the
+            // single-agent loop learned on device: handed nothing, models hallucinate.
+            if (observation.isEmpty) {
+                idle()
+                round++
+                continue
+            }
             val batch = mutableListOf<ScheduledAction>()
 
             // Parallel planning (synchronous here): each active sub-agent proposes.

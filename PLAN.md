@@ -363,22 +363,32 @@ The OpenClaw aha. The brain exists (`core/multiagent/`, green on fakes); this ph
 wires it to reality — with the CEO-plan hardening (stale re-plan at dequeue ✅ built,
 consolidated confirm, fairness ✅ built, partial results ✅ built, N× token budget).
 
-- **Decomposition:** one model call splits a compound intent into ≤3 sub-goals
-  (typed JSON list, else fall back to single-agent). Router: single goal → AgentLoop
-  (unchanged); multi → Coordinator.
-- **Device wiring:** SubAgents get per-goal `ClaudeModelProvider` planning;
-  ActuationScheduler drives the one `AgentAccessibilityService`; settle between
-  actuations; narration events carry `agentId` (the event schema already has
-  correlation ids) and the timeline renders per-agent glyph colors.
-- **Consolidated confirm:** multiple queued high-side-effect actions surface as ONE
-  review card (BatchConfirm exists in core); conflicting actions block and ask.
-- **Budget/limits:** hard cap = N× single-run budget; Stop cancels all sub-agents.
-- **Demo polish:** the canonical script (coffee → maps → text) rehearsed end-to-end
-  with the provider-swap moment; README one-command demo instructions refreshed.
+**SHIPPED 2026-06-23 (awaiting on-device confirm):**
+- **Decomposition:** `ModelProvider.decompose` seam (default = no split, fail-safe to the
+  original intent on ANY error); `ClaudeModelProvider` asks the model via
+  `Prompt.decomposeSystem/User` → `ActionJson.parseGoals` (≤3 self-contained goals, user's
+  language). Cheap `Compound.looksCompound` connective prefilter (EN+IT) so single tasks
+  never pay the extra call; the decomposer returning 1 goal also stays single-agent.
+- **`ModelSubAgent` (core):** model-backed SubAgent carrying the single-loop's honesty
+  into multi: verified-done per goal (rejected claim re-plans immediately with the reason;
+  repeated unverifiable → honest per-goal failure), lastError feedback, 12-step budget,
+  cancellation; narrates Plan/Propose/Verify/Done/Failure with its own `agentId` (`[g1]`).
+  Null from planNext ALWAYS means finished; `finishedOk/failed/outcome` say how.
+- **Coordinator hardening:** skips rounds on an empty mid-launch tree (idle hook) — the
+  blank-perceive lesson applied to multi.
+- **Device wiring (`AgentController.runCoordinated`):** compound → sub-agents share the
+  session provider; scheduler drives the service through a settling actuator (800ms after
+  each act, Execute narrated); **consolidated confirm** routes the batch through the SAME
+  ConfirmationHandler (overlay + autonomous mode compose for free) — all-or-nothing;
+  maxRounds 25; Stop fans out via `cancelled`; per-goal ✓/⚠ summary, partial results
+  honest (`Aborted("partial…")` unless every goal verified-finished).
 
-**Unit tests:** decomposition parse + single-goal fallback; consolidated confirm
-(N proposals → 1 confirm); budget abort; Stop fan-out.
-**On-device:** **T-MULTI-1**, **T-DEMO-1** (§6).
+**Unit tests (13):** goals parse (cap/blank/garbage), decompose via fake transport + both
+fail-safe paths, default-provider-never-splits, connective heuristic EN/IT, sub-agent
+done/abort/verify-reject-replan/verify-fail-honestly/lastError/cancel, and two
+ModelSubAgents running to completion through the REAL Coordinator with narration
+attributed per agent.
+**On-device (STILL TO RUN):** **T-MULTI-1**, **T-DEMO-1** (§6); README demo polish.
 
 **Exit criteria:** the canonical 2-app demo runs live with ≤1 consolidated confirm,
 partial results narrated honestly if a sub-goal fails, and a recorded run (screen

@@ -10,6 +10,22 @@ import org.junit.Test
 class ActionJsonTest {
 
     @Test
+    fun parseGoals_readsADecomposition() {
+        assertEquals(
+            listOf("find a pizzeria nearby", "text the address to Marco"),
+            ActionJson.parseGoals("""{"goals":["find a pizzeria nearby","text the address to Marco"]}"""),
+        )
+        // Tolerates surrounding prose; drops blanks; caps at 3.
+        assertEquals(
+            listOf("a", "b", "c"),
+            ActionJson.parseGoals("""ok: {"goals":["a","","b","c","d"]} done"""),
+        )
+        assertNull(ActionJson.parseGoals("not json"))
+        assertNull(ActionJson.parseGoals("""{"goals":[]}"""))
+        assertNull(ActionJson.parseGoals("""{"other":"x"}"""))
+    }
+
+    @Test
     fun parseVerdict_readsTheCompletionCheck() {
         val yes = ActionJson.parseVerdict("""{"verified": true, "reason": "compose closed"}""")!!
         assertEquals(true, yes.verified)

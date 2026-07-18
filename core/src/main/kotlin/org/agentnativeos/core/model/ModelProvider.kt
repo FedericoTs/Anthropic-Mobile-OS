@@ -65,6 +65,13 @@ fun interface ModelProvider {
      * second-guess themselves. [claimedSummary] is the model's own "done" text.
      */
     fun verify(context: PlanningContext, claimedSummary: String): VerifyResult = VerifyResult(true)
+
+    /**
+     * Split a compound intent into ≤3 self-contained sub-goals for parallel sub-agents.
+     * Default = no split (single-agent handles it); the real provider asks the model.
+     * Implementations must FAIL SAFE: any error returns the single original intent.
+     */
+    fun decompose(intent: String): List<String> = listOf(intent)
 }
 
 /**

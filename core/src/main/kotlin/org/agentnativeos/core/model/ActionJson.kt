@@ -61,6 +61,18 @@ object ActionJson {
         }
     }
 
+    /** Parse a decomposition {"goals":["...","..."]} — null if unreadable/empty; capped at 3. */
+    fun parseGoals(raw: String): List<String>? {
+        val start = raw.indexOf('{')
+        val end = raw.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        val obj = Json.parse(raw.substring(start, end + 1)) as? Map<*, *> ?: return null
+        val goals = (obj["goals"] as? List<*>)
+            ?.mapNotNull { (it as? String)?.trim()?.takeIf { g -> g.isNotEmpty() } }
+            ?.take(3)
+        return goals?.takeIf { it.isNotEmpty() }
+    }
+
     /** Parse a verifier verdict {"verified": true|false, "reason": "..."} or null if unreadable. */
     fun parseVerdict(raw: String): VerifyResult? {
         val start = raw.indexOf('{')

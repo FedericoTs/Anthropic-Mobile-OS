@@ -43,6 +43,15 @@ class ClaudeModelProvider(
         return AgentAction.Abort("couldn't parse model output: ${lastRaw.trim().take(200)}")
     }
 
+    override fun decompose(intent: String): List<String> {
+        val raw = try {
+            client.complete(Prompt.decomposeSystem(), Prompt.decomposeUser(intent))
+        } catch (t: Throwable) {
+            return listOf(intent) // fail safe: the single-agent loop handles it
+        }
+        return ActionJson.parseGoals(raw) ?: listOf(intent)
+    }
+
     override fun verify(context: PlanningContext, claimedSummary: String): VerifyResult {
         repeat(maxParseAttempts) {
             val raw = try {
