@@ -410,17 +410,23 @@ interests mined on-device from completed intents (tokenized, EN+IT stopwords, 30
 half-life, ≥2 recent mentions). Fed to the planner via `PlanningContext.userInterests`
 in BOTH single and multi paths, with the hard rule: personalization context, NEVER
 authority — it may flavor answers/suggestions, never change or add to the intent.
-**6C — App-as-sensor rich results · NEXT.** The pattern that makes "find + show + suggest"
-real WITHOUT new permissions: the agent drives an app that has the data (Maps has
-location + places), PERCEIVES its results from the accessibility tree, and answers
-in-OS. Design: (1) prompt guidance for "look it up in <app>, read the results, answer";
-(2) structured answer payload (kind + fields: place name/address/rating) inferred from
-the Done summary → richer cards: action chips ("Open in Maps" geo: link, "Navigate"),
-menu-suggestion block phrased from the taste profile; (3) later: inline static map /
-custom visualization (needs a tiles source — design decision pending, keep self-contained).
-**Caveats:** menus are rarely in the a11y tree — v1 menu suggestions are model knowledge
-+ taste profile, labeled as suggestions, not scraped fact. Location stays app-side (Maps'
-own permission), never ours.
+**6C — App-as-sensor rich results · LARGELY SHIPPED 2026-06-23.** Confirmed live first
+(screenshot): the agent drove Maps, read results from the a11y tree, and answered in the
+card with two real restaurants + ratings/distance/hours. Then shipped from that feedback:
+- **Structured places:** `Done` carries typed `Place(name, detail, query)` (≤3); the model
+  is instructed to return them for place answers — only places actually seen on screen,
+  never invented. Rich-done JSON parsed via the full parser (the flat one can't hold
+  arrays); places ride `NarrationEvent.Done` to the UI.
+- **Tappable place cards:** each place renders inside the answer card with name + detail +
+  **Open in Maps** (geo:) and **Navigate** (google.navigation:) chips — one tap from
+  answer to directions, no manual re-searching.
+- **Return-to-answer:** when a run finishes with our UI backgrounded, the OS brings the
+  narration screen back to the front — the user is never left stranded in the sensor app.
+  (True background app use is impossible: accessibility reads only the foreground window —
+  platform constraint, documented, not a bug.)
+- **STILL OPEN:** inline map visualization (needs a self-contained tiles source — design
+  decision pending); menu-suggestion block phrased from the taste profile (v1 = model
+  knowledge + interests, labeled as suggestion — menus are rarely in the a11y tree).
 
 ### Reserves (still parked)
 - **Fully-local/offline model backend** — v1.1 headline; plugs into `ModelProvider`.

@@ -86,9 +86,12 @@ sealed interface NarrationEvent {
         override val correlation: Correlation,
         override val atMs: Long,
         val summary: String,
+        /** Structured, actionable items the answer names — the UI renders them as cards. */
+        val places: List<org.agentnativeos.core.action.Place> = emptyList(),
     ) : NarrationEvent {
         override fun live() = "Done: $summary"
-        override fun audit() = "done summary=$summary"
+        override fun audit() =
+            "done summary=$summary" + if (places.isEmpty()) "" else " places=${places.size}"
     }
 
     /** Per-step latency (instrumentation only — kept out of the visible feed). */

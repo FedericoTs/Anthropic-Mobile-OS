@@ -10,6 +10,28 @@ import org.junit.Test
 class ActionJsonTest {
 
     @Test
+    fun parsesADoneCarryingStructuredPlaces() {
+        val raw = """{"action":"done","summary":"Found two spots.","places":[
+            {"name":"Buca di Beppo","detail":"4.4★ · 5.9 mi","query":"Buca di Beppo Italian Restaurant"},
+            {"name":"Azzurro","detail":"","query":""},
+            {"name":"  "},
+            {"name":"Extra1"},{"name":"Extra2"}
+        ]}"""
+        val done = ActionJson.parse(raw) as org.agentnativeos.core.action.AgentAction.Done
+        assertEquals("Found two spots.", done.summary)
+        assertEquals(3, done.places.size) // blank-name dropped, capped at 3
+        assertEquals("Buca di Beppo", done.places[0].name)
+        assertEquals("4.4★ · 5.9 mi", done.places[0].detail)
+        assertEquals("Buca di Beppo Italian Restaurant", done.places[0].query)
+        assertEquals("empty query falls back to the name", "Azzurro", done.places[1].query)
+        // A plain done still parses through the flat path with no places.
+        assertEquals(
+            AgentAction.Done("ok"),
+            ActionJson.parse("""{"action":"done","summary":"ok"}"""),
+        )
+    }
+
+    @Test
     fun parseGoals_readsADecomposition() {
         assertEquals(
             listOf("find a pizzeria nearby", "text the address to Marco"),

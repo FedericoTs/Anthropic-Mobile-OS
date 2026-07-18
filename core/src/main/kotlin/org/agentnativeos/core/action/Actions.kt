@@ -21,9 +21,18 @@ sealed interface AgentAction {
 
     data object Back : AgentAction
     data object Home : AgentAction
-    data class Done(val summary: String) : AgentAction
+
+    /**
+     * Task complete. [places] optionally carries the structured, actionable items the
+     * answer names (found restaurants, shops…) so the OS can render tappable cards —
+     * the answer surface — instead of leaving the user to re-search them by hand.
+     */
+    data class Done(val summary: String, val places: List<Place> = emptyList()) : AgentAction
     data class Abort(val reason: String) : AgentAction
 }
+
+/** One actionable place in an answer: display name, one-line detail, a maps-ready query. */
+data class Place(val name: String, val detail: String = "", val query: String = "")
 
 /** Scroll/swipe direction for [AgentAction.Scroll] (wheel pickers and lists). */
 enum class ScrollDirection { UP, DOWN }

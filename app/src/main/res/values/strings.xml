@@ -41,6 +41,9 @@
 
     <string name="narration_title">Watch it work</string>
     <string name="result_done">Done</string>
+    <string name="place_open_maps">Open in Maps</string>
+    <string name="place_navigate">Navigate</string>
+    <string name="place_no_maps">No maps app can open this.</string>
     <string name="narration_stop">Stop</string>
     <string name="narration_undo">↩ Undo</string>
     <string name="narration_undone">Rewinding…</string>

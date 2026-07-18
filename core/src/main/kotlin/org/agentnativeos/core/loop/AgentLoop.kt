@@ -190,7 +190,7 @@ class AgentLoop(
                         bus.emit(NarrationEvent.Failure(corr, clock(), reason, gotAsFar))
                         return LoopResult.Aborted(reason, gotAsFar, step)
                     }
-                    bus.emit(NarrationEvent.Done(corr, clock(), action.summary))
+                    bus.emit(NarrationEvent.Done(corr, clock(), action.summary, action.places))
                     return LoopResult.Completed(action.summary, step)
                 }
                 is AgentAction.Abort -> {

@@ -121,6 +121,21 @@ object AgentSession {
         main.post {
             listener?.onFinished(result)
             OverlayConfirm.hide()
+            // Don't strand the user in the app the agent was driving (e.g. Maps left
+            // open after a lookup): when the run ends with our UI backgrounded, bring
+            // the answer back to the foreground.
+            if (!uiForeground) {
+                org.agentnativeos.app.device.AgentAccessibilityService.instance?.let { svc ->
+                    svc.startActivity(
+                        android.content.Intent(svc, org.agentnativeos.app.ui.NarrationActivity::class.java)
+                            .addFlags(
+                                android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                                    android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                            ),
+                    )
+                }
+            }
         }
     }
 }

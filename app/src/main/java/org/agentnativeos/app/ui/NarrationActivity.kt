@@ -154,7 +154,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         // mono thinking lines and step rows (DESIGN: the payoff of "watch it think").
         if (event is NarrationEvent.Done) {
             activeRow = null
-            timeline.addView(resultCard(event.summary))
+            timeline.addView(resultCard(event))
             scrollToEnd()
             return
         }
@@ -198,7 +198,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     /** The answer surface: warm card, coral check caption, serif body — the result, not a log line. */
     @SuppressLint("SetTextI18n")
-    private fun resultCard(summary: String): View {
+    private fun resultCard(done: NarrationEvent.Done): View {
         fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
         val card = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -219,7 +219,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         )
         card.addView(
             TextView(this).apply {
-                text = summary
+                text = done.summary
                 textSize = 17f
                 typeface = Typeface.SERIF
                 setTextColor(color(R.color.text))
@@ -227,7 +227,84 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                 setPadding(0, dp(6), 0, 0)
             },
         )
+        done.places.forEach { card.addView(placeCard(it)) }
         return card
+    }
+
+    /** One actionable place from the answer: name + detail + one-tap Maps / Navigate. */
+    private fun placeCard(place: org.agentnativeos.core.action.Place): View {
+        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_pill)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(10) }
+        }
+        box.addView(
+            TextView(this).apply {
+                text = place.name
+                textSize = 16f
+                setTextColor(color(R.color.text))
+                setTypeface(typeface, Typeface.BOLD)
+            },
+        )
+        if (place.detail.isNotEmpty()) {
+            box.addView(
+                TextView(this).apply {
+                    text = place.detail
+                    textSize = 13f
+                    setTextColor(color(R.color.muted))
+                    setPadding(0, dp(2), 0, 0)
+                },
+            )
+        }
+        val chips = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(0, dp(10), 0, 0)
+        }
+        chips.addView(chip(getString(R.string.place_open_maps), primary = true) {
+            openPlace("geo:0,0?q=${android.net.Uri.encode(place.query)}")
+        })
+        chips.addView(chip(getString(R.string.place_navigate), primary = false) {
+            openPlace("google.navigation:q=${android.net.Uri.encode(place.query)}")
+        })
+        box.addView(chips)
+        return box
+    }
+
+    private fun chip(label: String, primary: Boolean, onTap: () -> Unit): View =
+        Button(this).apply {
+            text = label
+            isAllCaps = false
+            textSize = 14f
+            minHeight = 0
+            minimumHeight = (40 * resources.displayMetrics.density).toInt()
+            if (primary) {
+                setTextColor(color(R.color.on_accent))
+                backgroundTintList = android.content.res.ColorStateList.valueOf(color(R.color.accent))
+            } else {
+                setTextColor(color(R.color.text))
+                background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_input)
+            }
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { marginEnd = (8 * resources.displayMetrics.density).toInt() }
+            setOnClickListener { onTap() }
+        }
+
+    private fun openPlace(uri: String) {
+        try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (_: android.content.ActivityNotFoundException) {
+            android.widget.Toast.makeText(this, getString(R.string.place_no_maps), android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun scrollToEnd() = scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }

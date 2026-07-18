@@ -33,8 +33,9 @@ object ActionJson {
 
     fun parse(raw: String): AgentAction? {
         // The flat parser handles every action whose fields are strings. An "invoke"
-        // carries a nested args object, so fall through to the full Json parser.
-        val m = JsonLite.parseFlatObject(raw) ?: return parseInvoke(raw)
+        // (nested args) or a "done" carrying structured places falls through to the
+        // full Json parser.
+        val m = JsonLite.parseFlatObject(raw) ?: return parseInvoke(raw) ?: parseRichDone(raw)
         return when (m["action"]?.lowercase()?.trim()) {
             "tap" -> m["target"]?.let { AgentAction.Tap(it) }
             "type" -> {
@@ -59,6 +60,28 @@ object ActionJson {
             "invoke" -> parseInvoke(raw) // capability with nested args
             else -> null
         }
+    }
+
+    /** Parse a done that carries structured places (the flat parser can't hold arrays). */
+    private fun parseRichDone(raw: String): AgentAction? {
+        val start = raw.indexOf('{')
+        val end = raw.lastIndexOf('}')
+        if (start < 0 || end <= start) return null
+        val obj = Json.parse(raw.substring(start, end + 1)) as? Map<*, *> ?: return null
+        if ((obj["action"] as? String)?.lowercase()?.trim() != "done") return null
+        val places = (obj["places"] as? List<*>)
+            ?.mapNotNull { entry ->
+                val p = entry as? Map<*, *> ?: return@mapNotNull null
+                val name = (p["name"] as? String)?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+                org.agentnativeos.core.action.Place(
+                    name = name,
+                    detail = (p["detail"] as? String)?.trim().orEmpty(),
+                    query = (p["query"] as? String)?.trim()?.ifEmpty { name } ?: name,
+                )
+            }
+            ?.take(3)
+            .orEmpty()
+        return AgentAction.Done((obj["summary"] as? String).orEmpty(), places)
     }
 
     /** Parse a decomposition {"goals":["...","..."]} — null if unreadable/empty; capped at 3. */

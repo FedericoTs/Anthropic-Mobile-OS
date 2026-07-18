@@ -74,7 +74,7 @@ class ModelSubAgent(
                     // Same honest-completion policy as the single-agent loop.
                     val verdict = provider.verify(context, action.summary)
                     bus?.emit(NarrationEvent.Verify(corr, clock(), verdict.verified, verdict.reason))
-                    if (verdict.verified) return finish(ok = true, action.summary)
+                    if (verdict.verified) return finish(ok = true, action.summary, action.places)
                     doneVerifyFails++
                     if (doneVerifyFails >= maxDoneVerifyFails) {
                         return finish(ok = false, "reported done but could not verify: ${verdict.reason}")
@@ -102,14 +102,18 @@ class ModelSubAgent(
         }
     }
 
-    private fun finish(ok: Boolean, summary: String): AgentAction? {
+    private fun finish(
+        ok: Boolean,
+        summary: String,
+        places: List<org.agentnativeos.core.action.Place> = emptyList(),
+    ): AgentAction? {
         finished = true
         failed = !ok
         outcome = summary
         val corr = Correlation(taskId, step, id)
         bus?.emit(
             if (ok) {
-                NarrationEvent.Done(corr, clock(), "[$id] $summary")
+                NarrationEvent.Done(corr, clock(), "[$id] $summary", places)
             } else {
                 NarrationEvent.Failure(
                     corr, clock(), "[$id] $summary",

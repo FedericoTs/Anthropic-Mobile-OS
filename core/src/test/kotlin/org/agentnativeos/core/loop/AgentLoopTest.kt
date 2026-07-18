@@ -375,6 +375,22 @@ class AgentLoopTest {
     }
 
     @Test
+    fun structuredPlacesRideTheDoneEventToTheUi() {
+        val audit = AuditLog()
+        val place = org.agentnativeos.core.action.Place("Buca di Beppo", "4.4★", "Buca di Beppo Restaurant")
+        loop(
+            StaticPerceiver(screenWith("Results")),
+            org.agentnativeos.core.model.ScriptedModelProvider(
+                listOf(AgentAction.Done("found it", listOf(place))),
+            ),
+            RecordingActuator(), audit = audit,
+        ).run("find a pizzeria")
+
+        val done = audit.entries().filterIsInstance<NarrationEvent.Done>().single()
+        assertEquals(listOf(place), done.places)
+    }
+
+    @Test
     fun emitsPerStepTimingForInstrumentation() {
         val audit = AuditLog()
         loop(

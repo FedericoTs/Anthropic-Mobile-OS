@@ -100,6 +100,14 @@ class PromptTest {
     }
 
     @Test
+    fun outputRuleAsksForStructuredPlacesOnlyFromTheScreen() {
+        val sys = Prompt.system().lowercase().replace(Regex("\\s+"), " ")
+        assertTrue("structured places form is specified", sys.contains("\"places\""))
+        assertTrue("only real, perceived places", sys.contains("never invented"))
+        assertTrue("optional — omitted otherwise", sys.contains("otherwise omit \"places\""))
+    }
+
+    @Test
     fun interestsArePersonalizationContextNeverAuthority() {
         val ctx = PlanningContext(
             intent = "find a pizzeria nearby and tell me about it",
