@@ -39,7 +39,16 @@
     <string name="app_not_found">Couldn’t find an app matching “%1$s”.</string>
     <string name="app_grid_title">Apps</string>
 
-    <string name="narration_title">Watch it work</string>
+    <string name="narration_spark">✳</string>
+    <string name="narration_activity_header">Agent activity</string>
+    <string name="narration_live_dot">●</string>
+    <string name="narration_apps_glyph">⊞</string>
+    <string name="narration_status_running">Running…</string>
+    <string name="narration_status_finished">Finished</string>
+    <string name="narration_status_stopped">Stopped</string>
+    <string name="narration_model_pill">✳ %1$s · swap model</string>
+    <string name="confirm_caution_caps">NEEDS YOUR OK</string>
+    <string name="step_active_caps">CURRENTLY ACTIVE</string>
     <string name="result_done">Done</string>
     <string name="place_open_maps">Open in Maps</string>
     <string name="place_navigate">Navigate</string>
@@ -50,7 +59,6 @@
     <string name="confirm_caution">Needs your OK</string>
     <string name="confirm_approve">Approve</string>
     <string name="confirm_skip">Skip</string>
-    <string name="narration_intent_prefix">Intent: %1$s</string>
 
     <string name="settings_title">Model</string>
     <string name="settings_explainer">Give the agent a credential to run intents. Everything you paste is stored encrypted on this device only, and sent only to Anthropic over TLS — never logged or shown in the agent feed.</string>

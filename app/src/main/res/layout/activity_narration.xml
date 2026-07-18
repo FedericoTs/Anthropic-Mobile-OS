@@ -1,143 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The trust surface (docs/designs/mockups/active-narration.png): the INTENT is the
+     hero in a card with a live status line; agent activity renders as coalesced step
+     cards on a glyph rail; the confirm card is the inline gate; one calm bottom bar. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:paddingHorizontal="16dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="12dp">
 
-    <TextView
-        android:id="@+id/txt_intent"
+    <!-- Header: coral spark + the user's intent (serif) + live run status -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/muted"
-        android:textSize="14sp" />
+        android:background="@drawable/bg_input"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <TextView
-        android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingEnd="10dp"
+                android:text="@string/narration_spark"
+                android:textColor="@color/accent"
+                android:textSize="20sp"
+                tools:ignore="RtlSymmetry" />
+
+            <TextView
+                android:id="@+id/txt_intent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:textColor="@color/text"
+                android:textSize="20sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txt_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:textColor="@color/muted"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Section header -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="serif"
-        android:paddingTop="2dp"
-        android:paddingBottom="12dp"
-        android:text="@string/narration_title"
-        android:textColor="@color/text"
-        android:textSize="26sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="20dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:text="@string/narration_activity_header"
+            android:textColor="@color/text"
+            android:textSize="21sp" />
+
+        <TextView
+            android:id="@+id/txt_live_dot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:text="@string/narration_live_dot"
+            android:textColor="@color/accent"
+            android:textSize="12sp"
+            tools:ignore="RtlSymmetry" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/timeline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical"
+            android:paddingBottom="8dp" />
     </ScrollView>
 
-    <!-- The trust gate: appears inline in the thumb zone for high-side-effect steps. -->
+    <!-- The trust gate: needs-your-OK card in the thumb zone -->
     <LinearLayout
         android:id="@+id/confirm_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_input"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_card_active"
         android:orientation="vertical"
         android:padding="16dp"
-        android:layout_marginTop="12dp"
         android:visibility="gone">
 
         <TextView
             android:id="@+id/txt_confirm_caution"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/confirm_caution"
-            android:textColor="@color/accent"
-            android:textSize="14sp"
+            android:letterSpacing="0.08"
+            android:text="@string/confirm_caution_caps"
+            android:textColor="@color/accent_press"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txt_confirm_action"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="serif"
             android:paddingTop="6dp"
             android:textColor="@color/text"
-            android:textSize="17sp" />
+            android:textSize="18sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:orientation="horizontal"
-            tools:ignore="ButtonStyle">
+            android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_approve"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/accent"
+                android:background="@drawable/bg_btn_accent"
+                android:stateListAnimator="@null"
                 android:text="@string/confirm_approve"
-                android:textColor="@color/on_accent" />
+                android:textAllCaps="false"
+                android:textColor="@color/on_accent"
+                android:textSize="15sp" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_skip"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_pill"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/bg_btn_outline"
                 android:paddingHorizontal="20dp"
+                android:stateListAnimator="@null"
                 android:text="@string/confirm_skip"
                 android:textAllCaps="false"
-                android:textColor="@color/text" />
+                android:textColor="@color/text"
+                android:textSize="15sp" />
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Undo: appears after a rewindable run, quiet pill -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_undo"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_pill"
+        android:paddingHorizontal="20dp"
+        android:stateListAnimator="@null"
+        android:text="@string/narration_undo"
+        android:textAllCaps="false"
+        android:textColor="@color/text"
+        android:visibility="gone" />
+
+    <!-- Bottom bar: model · Stop · apps (one calm surface, mockup-style) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_input"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="8dp">
 
-        <Button
+        <TextView
+            android:id="@+id/txt_model"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:textColor="@color/text"
+            android:textSize="14sp" />
+
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_stop"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:backgroundTint="@color/accent"
-            android:minWidth="96dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_btn_accent"
+            android:paddingHorizontal="22dp"
+            android:stateListAnimator="@null"
             android:text="@string/narration_stop"
-            android:textColor="@color/on_accent" />
+            android:textAllCaps="false"
+            android:textColor="@color/on_accent"
+            android:textSize="15sp" />
 
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <Button
-            android:id="@+id/btn_undo"
-            style="?android:attr/borderlessButtonStyle"
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_apps"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_pill"
-            android:paddingHorizontal="20dp"
-            android:text="@string/narration_undo"
+            android:layout_height="44dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_btn_outline"
+            android:paddingHorizontal="16dp"
+            android:stateListAnimator="@null"
+            android:text="@string/narration_apps_glyph"
             android:textAllCaps="false"
             android:textColor="@color/text"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/btn_apps"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_pill"
-            android:paddingHorizontal="20dp"
-            android:text="@string/home_apps"
-            android:textAllCaps="false"
-            android:textColor="@color/text" />
+            android:textSize="16sp" />
     </LinearLayout>
 </LinearLayout>

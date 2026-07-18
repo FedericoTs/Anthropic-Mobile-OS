@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -25,12 +26,14 @@ import org.agentnativeos.core.loop.ConfirmationHandler
 import org.agentnativeos.core.loop.LoopResult
 import org.agentnativeos.core.model.Auth
 import org.agentnativeos.core.model.ClaudeModelProvider
+import org.agentnativeos.core.model.ModelCatalog
 
 /**
- * The trust surface: a live vertical timeline of the agent's steps. Done steps
- * settle muted; the active step is the bold coral anchor; the agent's raw
- * "thinking" (plan) lines render in monospace; a high-side-effect step raises an
- * inline confirm card in the thumb zone, and Stop is always reachable.
+ * The trust surface (mockup: active-narration.png). The INTENT is the hero in a
+ * header card with a live status line; the agent's work renders as coalesced STEP
+ * CARDS on a glyph rail — the active step glows soft coral, settled steps show a
+ * quiet check — and the answer arrives as the serif result card. The confirm card
+ * is the inline gate in the thumb zone; Stop is always reachable in the bottom bar.
  */
 class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
@@ -38,7 +41,39 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
     private lateinit var scroll: ScrollView
     private lateinit var confirmCard: View
     private lateinit var confirmAction: TextView
-    private var activeRow: TextView? = null
+    private lateinit var txtStatus: TextView
+
+    /** One visual card per loop step (correlation-keyed); events update it in place. */
+    private inner class StepCard(val root: View, val glyph: TextView, val card: LinearLayout) {
+        val caption: TextView = smallCaps().also { card.addView(it) }
+        val title: TextView = TextView(this@NarrationActivity).apply {
+            textSize = 16.5f
+            typeface = Typeface.SERIF
+            setTextColor(color(R.color.text))
+            visibility = View.GONE
+            card.addView(this)
+        }
+        val mono: TextView = TextView(this@NarrationActivity).apply {
+            textSize = 12.5f
+            typeface = Typeface.MONOSPACE
+            setTextColor(color(R.color.muted))
+            setPadding(0, dp(3), 0, 0)
+            visibility = View.GONE
+            card.addView(this)
+        }
+        val detail: TextView = TextView(this@NarrationActivity).apply {
+            textSize = 13f
+            setTextColor(color(R.color.muted))
+            setPadding(0, dp(3), 0, 0)
+            visibility = View.GONE
+            card.addView(this)
+        }
+    }
+
+    private val cards = LinkedHashMap<String, StepCard>()
+    private var activeCard: StepCard? = null
+    private var stepsSeen = 0
+    private val appLabels = HashMap<String, String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +83,10 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         scroll = findViewById(R.id.scroll)
         confirmCard = findViewById(R.id.confirm_card)
         confirmAction = findViewById(R.id.txt_confirm_action)
+        txtStatus = findViewById(R.id.txt_status)
 
-        findViewById<TextView>(R.id.txt_intent).text =
-            intent.getStringExtra(EXTRA_INTENT)?.let { getString(R.string.narration_intent_prefix, it) } ?: ""
+        findViewById<TextView>(R.id.txt_intent).text = intent.getStringExtra(EXTRA_INTENT) ?: ""
+        txtStatus.text = getString(R.string.narration_status_running)
 
         findViewById<Button>(R.id.btn_approve).setOnClickListener { AgentSession.resolveConfirmation(true) }
         findViewById<Button>(R.id.btn_skip).setOnClickListener { AgentSession.resolveConfirmation(false) }
@@ -62,10 +98,13 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
             it.visibility = View.GONE // consumed — a run rewinds once
             AgentController.undoLast()
         }
+        findViewById<TextView>(R.id.txt_model).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
 
         AgentSession.setListener(this)
         // Render anything already in flight, then start a run if requested.
-        AgentSession.snapshot().forEach { if (it !is NarrationEvent.StepTiming) addRow(it) }
+        AgentSession.snapshot().forEach { render(it) }
         when {
             AgentSession.running -> Unit // already in flight; we just render it
             intent.getBooleanExtra(EXTRA_DEMO, false) -> NarrationDemo.run()
@@ -88,21 +127,20 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         } else {
             ConfirmationHandler { action, reason -> AgentSession.awaitConfirmation(action, reason) }
         }
-        if (autonomous) {
-            findViewById<TextView>(R.id.txt_intent).apply {
-                text = getString(R.string.narration_autonomous)
-                setTextColor(ContextCompat.getColor(this@NarrationActivity, R.color.warn))
-            }
-        }
+        if (autonomous) txtStatus.text = getString(R.string.narration_autonomous)
         AgentController.run(intentText, ClaudeModelProvider(auth, model), confirmer)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
         // While our feed is visible, the inline confirm card is enough; the floating
         // overlay is only needed once the agent navigates into another app.
         AgentSession.uiForeground = true
         OverlayConfirm.hide()
+        val model = ModelCatalog.byId(ModelPreferences(this).selected)
+        findViewById<TextView>(R.id.txt_model).text =
+            getString(R.string.narration_model_pill, model.shortLabel)
     }
 
     override fun onPause() {
@@ -117,10 +155,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     // --- AgentSession.Listener (callbacks arrive on the main thread) ---
 
-    override fun onEvent(event: NarrationEvent) {
-        if (event is NarrationEvent.StepTiming) return // instrumentation only
-        addRow(event)
-    }
+    override fun onEvent(event: NarrationEvent) = render(event)
 
     override fun onConfirmRequested(action: AgentAction, reason: String) {
         confirmAction.text = reason
@@ -132,82 +167,178 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
         confirmCard.visibility = View.GONE
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onFinished(result: LoopResult) {
-        activeRow = null // nothing is "active" once the run ends
+        settleActive()
+        txtStatus.text = when (result) {
+            is LoopResult.Completed -> "${getString(R.string.narration_status_finished)} · ${stepsSeen} steps"
+            is LoopResult.Aborted -> getString(R.string.narration_status_stopped)
+        }
+        findViewById<TextView>(R.id.txt_live_dot).visibility = View.INVISIBLE
         // Offer to rewind if the run did anything reversible (the trust gate's other half).
         if (AgentSession.lastUndoStack?.canUndo == true) {
             findViewById<Button>(R.id.btn_undo).visibility = View.VISIBLE
         }
     }
 
-    // Narration text is inherently dynamic (the agent's own words + a glyph prefix);
-    // the ✓/⚠ markers are status, not translatable copy.
+    // --- Rendering: events coalesce into per-step cards on a glyph rail ---
+
     @SuppressLint("SetTextI18n")
-    private fun addRow(event: NarrationEvent) {
-        // Settle the previous active step into the muted "done" style.
-        activeRow?.apply {
-            setTextColor(color(R.color.muted))
-            setTypeface(null, Typeface.NORMAL)
-        }
-
-        // The RESULT gets its own surface — a calm serif answer card, distinct from the
-        // mono thinking lines and step rows (DESIGN: the payoff of "watch it think").
-        if (event is NarrationEvent.Done) {
-            activeRow = null
-            timeline.addView(resultCard(event))
-            scrollToEnd()
-            return
-        }
-
-        val row = TextView(this).apply {
-            textSize = 16f
-            val pad = (6 * resources.displayMetrics.density).toInt()
-            setPadding(0, pad, 0, pad)
-        }
-
+    private fun render(event: NarrationEvent) {
         when (event) {
-            is NarrationEvent.Plan -> {
-                row.text = event.live()
-                row.typeface = Typeface.MONOSPACE
-                row.setTextColor(color(R.color.muted))
-                row.textSize = 14f
+            is NarrationEvent.StepTiming -> return // instrumentation only
+            is NarrationEvent.Done -> {
+                settleActive()
+                timeline.addView(resultCard(event))
             }
             is NarrationEvent.Failure -> {
-                row.text = "⚠ ${event.live()}"
-                row.setTextColor(color(R.color.warn))
+                settleActive()
+                timeline.addView(noteRow("⚠ ${event.live()}", color(R.color.warn)))
+            }
+            is NarrationEvent.Verify -> {
+                timeline.addView(
+                    if (event.ok) {
+                        noteRow("✓ ${event.live()}", color(R.color.muted))
+                    } else {
+                        noteRow("↻ ${event.live()}", color(R.color.warn))
+                    },
+                )
+            }
+            is NarrationEvent.Confirm -> {
+                activeCard?.caption?.apply {
+                    text = if (event.approved) "APPROVED" else "SKIPPED"
+                    setTextColor(color(if (event.approved) R.color.accent_press else R.color.muted))
+                    visibility = View.VISIBLE
+                }
             }
             else -> {
-                row.text = event.live()
-                row.setTextColor(color(R.color.text))
+                val key = event.correlation.let { "${it.taskId}/${it.stepId}/${it.agentId}" }
+                val card = cards.getOrPut(key) { newStepCard() }
+                when (event) {
+                    is NarrationEvent.Perceive -> {
+                        card.detail.text = "Reading ${appLabel(event.pkg)} · ${event.nodeCount} elements"
+                        card.detail.visibility = View.VISIBLE
+                    }
+                    is NarrationEvent.Plan -> {
+                        if (card.mono.visibility != View.VISIBLE) {
+                            card.mono.text = event.intent.take(90)
+                            card.mono.visibility = View.VISIBLE
+                        }
+                    }
+                    is NarrationEvent.Propose -> {
+                        card.title.text = event.live()
+                        card.title.visibility = View.VISIBLE
+                        if (event.highSideEffect) {
+                            card.caption.text = getString(R.string.confirm_caution_caps)
+                            card.caption.setTextColor(color(R.color.accent_press))
+                            card.caption.visibility = View.VISIBLE
+                        }
+                    }
+                    is NarrationEvent.Execute -> {
+                        card.title.text = event.live()
+                        card.title.visibility = View.VISIBLE
+                        settle(card, ok = event.ok)
+                    }
+                    else -> Unit
+                }
             }
         }
-
-        // The newest non-terminal, non-thinking step becomes the active anchor.
-        val terminal = event is NarrationEvent.Done || event is NarrationEvent.Failure
-        if (!terminal && event !is NarrationEvent.Plan) {
-            row.setTextColor(color(R.color.accent))
-            row.setTypeface(null, Typeface.BOLD)
-            activeRow = row
-        } else if (terminal) {
-            activeRow = null
-        }
-
-        timeline.addView(row)
         scrollToEnd()
+    }
+
+    /** A fresh step card: coral rail dot + soft-coral active card; settles on execute. */
+    @SuppressLint("SetTextI18n")
+    private fun newStepCard(): StepCard {
+        settleActive()
+        stepsSeen++
+        if (AgentSession.running) {
+            txtStatus.text = "${getString(R.string.narration_status_running).trimEnd('…')} · step $stepsSeen"
+        }
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(10) }
+        }
+        val glyph = TextView(this).apply {
+            text = "●"
+            textSize = 13f
+            setTextColor(color(R.color.accent))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(26), LinearLayout.LayoutParams.WRAP_CONTENT)
+                .apply { topMargin = dp(14) }
+        }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_card_active)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        row.addView(glyph)
+        row.addView(card)
+        timeline.addView(row)
+        val step = StepCard(row, glyph, card).also {
+            it.caption.text = getString(R.string.step_active_caps)
+            it.caption.setTextColor(color(R.color.accent_press))
+            it.caption.visibility = View.VISIBLE
+        }
+        activeCard = step
+        return step
+    }
+
+    /** Settle a card into the quiet done style: check glyph, plain surface, no caption. */
+    private fun settle(card: StepCard, ok: Boolean = true) {
+        card.glyph.text = if (ok) "✓" else "⚠"
+        card.glyph.setTextColor(color(if (ok) R.color.accent else R.color.warn))
+        card.card.background = ContextCompat.getDrawable(this, R.drawable.bg_input)
+        if (card.caption.text == getString(R.string.step_active_caps)) {
+            card.caption.visibility = View.GONE
+        }
+        if (card == activeCard) activeCard = null
+    }
+
+    private fun settleActive() {
+        activeCard?.let { settle(it) }
+    }
+
+    /** A small quiet line between cards (verify notes, failures). */
+    private fun noteRow(text: String, tint: Int): View = TextView(this).apply {
+        this.text = text
+        textSize = 13.5f
+        setTextColor(tint)
+        setPadding(dp(26), dp(8), 0, 0)
+    }
+
+    private fun appLabel(pkg: String?): String {
+        if (pkg == null) return "the screen"
+        return appLabels.getOrPut(pkg) {
+            try {
+                packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
+            } catch (_: Exception) {
+                pkg.substringAfterLast('.')
+            }
+        }
+    }
+
+    private fun smallCaps(): TextView = TextView(this).apply {
+        textSize = 11f
+        letterSpacing = 0.08f
+        setTypeface(typeface, Typeface.BOLD)
+        setTextColor(color(R.color.muted))
+        visibility = View.GONE
     }
 
     /** The answer surface: warm card, coral check caption, serif body — the result, not a log line. */
     @SuppressLint("SetTextI18n")
     private fun resultCard(done: NarrationEvent.Done): View {
-        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-        val card = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_input)
             setPadding(dp(18), dp(14), dp(18), dp(16))
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(10) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(12) }
         }
         card.addView(
             TextView(this).apply {
@@ -223,7 +354,7 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                 textSize = 17f
                 typeface = Typeface.SERIF
                 setTextColor(color(R.color.text))
-                setLineSpacing((4 * resources.displayMetrics.density), 1f)
+                setLineSpacing(dp(4).toFloat(), 1f)
                 setPadding(0, dp(6), 0, 0)
             },
         )
@@ -233,14 +364,13 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
     /** One actionable place from the answer: name + detail + one-tap Maps / Navigate. */
     private fun placeCard(place: org.agentnativeos.core.action.Place): View {
-        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-        val box = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_pill)
             setPadding(dp(14), dp(12), dp(14), dp(12))
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(10) }
         }
         box.addView(
@@ -261,8 +391,8 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                 },
             )
         }
-        val chips = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
+        val chips = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
             setPadding(0, dp(10), 0, 0)
         }
         chips.addView(chip(getString(R.string.place_open_maps), primary = true) {
@@ -280,19 +410,21 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
             text = label
             isAllCaps = false
             textSize = 14f
+            stateListAnimator = null
             minHeight = 0
-            minimumHeight = (40 * resources.displayMetrics.density).toInt()
-            if (primary) {
-                setTextColor(color(R.color.on_accent))
-                backgroundTintList = android.content.res.ColorStateList.valueOf(color(R.color.accent))
-            } else {
-                setTextColor(color(R.color.text))
-                background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_input)
-            }
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { marginEnd = (8 * resources.displayMetrics.density).toInt() }
+            minWidth = 0
+            minimumHeight = dp(40)
+            minimumWidth = dp(96)
+            setPadding(dp(16), 0, dp(16), 0)
+            background = ContextCompat.getDrawable(
+                this@NarrationActivity,
+                if (primary) R.drawable.bg_btn_accent else R.drawable.bg_btn_outline,
+            )
+            setTextColor(color(if (primary) R.color.on_accent else R.color.text))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { marginEnd = dp(8) }
             setOnClickListener { onTap() }
         }
 
@@ -303,11 +435,15 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         } catch (_: android.content.ActivityNotFoundException) {
-            android.widget.Toast.makeText(this, getString(R.string.place_no_maps), android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                this, getString(R.string.place_no_maps), android.widget.Toast.LENGTH_SHORT,
+            ).show()
         }
     }
 
     private fun scrollToEnd() = scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     private fun color(id: Int) = ContextCompat.getColor(this, id)
 
