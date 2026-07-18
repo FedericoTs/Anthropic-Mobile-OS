@@ -60,6 +60,46 @@
             android:textColor="@color/on_accent" />
     </LinearLayout>
 
+    <!-- Predictive "Right now": learned suggestions, populated at runtime; hidden when none. -->
+    <LinearLayout
+        android:id="@+id/suggestions_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="24dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:text="@string/home_right_now"
+                android:textColor="@color/text"
+                android:textSize="22sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/home_right_now_spark"
+                android:textColor="@color/accent"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/suggestions_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+
     <Space
         android:layout_width="match_parent"
         android:layout_height="0dp"

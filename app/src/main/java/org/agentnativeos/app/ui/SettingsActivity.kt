@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import org.agentnativeos.app.AutonomyPreferences
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.ModelPreferences
+import org.agentnativeos.app.PredictionStore
 import org.agentnativeos.app.R
 import org.agentnativeos.core.model.ModelCatalog
 import org.agentnativeos.core.model.ModelOption
@@ -29,6 +30,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var store: CredentialStore
     private lateinit var models: ModelPreferences
     private lateinit var autonomy: AutonomyPreferences
+    private lateinit var predictions: PredictionStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +38,7 @@ class SettingsActivity : AppCompatActivity() {
         store = CredentialStore(this)
         models = ModelPreferences(this)
         autonomy = AutonomyPreferences(this)
+        predictions = PredictionStore(this)
 
         renderModelPicker()
 
@@ -44,6 +47,14 @@ class SettingsActivity : AppCompatActivity() {
             setOnCheckedChangeListener { _, checked ->
                 autonomy.autonomous = checked
                 toast(getString(if (checked) R.string.settings_autonomy_on else R.string.settings_autonomy_off))
+            }
+        }
+
+        findViewById<SwitchCompat>(R.id.switch_predictions).apply {
+            isChecked = predictions.enabled
+            setOnCheckedChangeListener { _, checked ->
+                predictions.enabled = checked
+                toast(getString(if (checked) R.string.settings_predictions_on else R.string.settings_predictions_off))
             }
         }
 

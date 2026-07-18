@@ -9,6 +9,15 @@
     <string name="home_send">Go</string>
     <string name="home_recent_none">No recent activity yet.</string>
     <string name="home_apps">Apps</string>
+    <string name="home_right_now">Right now</string>
+    <string name="home_right_now_spark">✦</string>
+    <string name="home_suggestion_start">Start</string>
+    <string name="home_suggestion_dismissed">Okay — I won\'t suggest that for a while.</string>
+    <string name="settings_predictions_header">Suggestions</string>
+    <string name="settings_predictions_explainer">Let the home suggest things you often do at this time of day. Learned on-device from your own task history — tap to run, long-press a suggestion to dismiss it. Suggestions never run on their own.</string>
+    <string name="settings_predictions_switch">Show suggestions on the home</string>
+    <string name="settings_predictions_on">Suggestions on.</string>
+    <string name="settings_predictions_off">Suggestions off.</string>
     <string name="swap_model_pill">Claude · swap model</string>
     <string name="home_model_pill">● %1$s · swap model</string>
 

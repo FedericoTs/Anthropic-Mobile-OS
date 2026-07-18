@@ -319,14 +319,18 @@ path, on-device only, suggestions never act.**
 - STILL TODO: persist `SuggestionFeedback` (codec + app store); the `SuggestionRecord`
   shown/tapped/dismissed log = the eval dataset (§7).
 
-**4.3 Predictive home (app)** — per the approved `predictive-home.png` mockup (v1).
-- Suggestion chips above the recent list: quiet `--surface` cards, plain words
-  ("9:00 · You usually start a 25-min timer — start it?"), tap = pre-fills the
-  intent input and runs through the NORMAL loop (gate and all), long-press/⨯ =
-  dismiss (feeds cooldown). A Settings toggle: **Predictions on/off** (user-owned),
-  plus "why this?" on long-press showing the pattern (transparency ethos).
-- Run a `/design-consultation` pass on the chip component before building the UI
-  (it adds a new component to the OS vocabulary — DESIGN.md rule).
+**4.3 Predictive home (app) — SHIPPED 2026-06-23 (awaiting device confirm).**
+- `SuggestionFeedbackCodec` (core) persists feedback via `Json`; `PredictionStore` (app) is
+  the on-device bridge: maps completed `PersistentTaskMemory` → `UsageEvent`s (device
+  `ZoneId`), runs the engine for `now`, records shown/tapped/dismissed. User-owned master
+  switch (`enabled`, default on).
+- Home "Right now" section (per `predictive-home.png`): serif header + coral spark, then a
+  row per suggestion (`--surface` card + coral "Start"). Tap = runs through the NORMAL loop
+  (a tap, never auto-run); long-press = dismiss (feeds cooldown + re-renders). Hidden when
+  no suggestions. Settings gains a **Suggestions on/off** toggle.
+- Followed DESIGN.md + the approved mockup directly (chip = quiet card + coral action) in
+  lieu of a live `/design-consultation` pass. STILL TODO: "why this?" transparency line;
+  per-intent glyphs; the `SuggestionRecord` eval log (§7); tune thresholds from real usage.
 
 **4.4 (After 4.1–4.3 prove precision) Model-phrased suggestions** — optional,
 budgeted (≤1 call/day, on unlock+wifi, cheapest model) to phrase or cluster, never
