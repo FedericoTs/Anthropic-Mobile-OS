@@ -159,6 +159,8 @@ class AgentAccessibilityService : AccessibilityService(), Perceiver, Actuator {
             ?: return ActionOutcome(false, "no launch intent for $pkg")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+        // Agent-driven opens count toward the predictive "Apps, right now" row too.
+        org.agentnativeos.app.AppLaunchLog(this).record(pkg)
         return ActionOutcome(true, "launch")
     }
 

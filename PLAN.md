@@ -331,6 +331,14 @@ path, on-device only, suggestions never act.**
 - Followed DESIGN.md + the approved mockup directly (chip = quiet card + coral action) in
   lieu of a live `/design-consultation` pass. STILL TODO: "why this?" transparency line;
   per-intent glyphs; the `SuggestionRecord` eval log (§7); tune thresholds from real usage.
+- **Home redesign round 2 (2026-06-23, confirmed rendering on device):** scrollable home
+  (ScrollView — the old fixed column clipped the suggestions), mockup-aligned: serif
+  wordmark → greeting + coral clock → intent input → "Right now" → **"Apps, right now"**
+  (the predictive app shelf — `AppUsageRanker` in core: same-time-slice habits first, then
+  overall recency, launcher-list fill so the shelf is whole from day one; signal =
+  `AppLaunchLog`, launches made through OUR surfaces: home fast path, app grid, agent
+  launches — no system usage permission). The raw recent-task log was REMOVED from the
+  home (memory still feeds the agent + "what have you done"). Pinned bottom bar.
 
 **4.4 (After 4.1–4.3 prove precision) Model-phrased suggestions** — optional,
 budgeted (≤1 call/day, on unlock+wifi, cheapest model) to phrase or cluster, never

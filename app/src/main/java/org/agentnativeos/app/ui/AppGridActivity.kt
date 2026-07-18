@@ -11,6 +11,7 @@ import android.widget.GridView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import org.agentnativeos.app.AppLaunchLog
 import org.agentnativeos.app.R
 
 /** The classic app grid — the familiar safety net behind the agent. */
@@ -31,6 +32,7 @@ class AppGridActivity : AppCompatActivity() {
             val pkg = apps[position].activityInfo.packageName
             pm.getLaunchIntentForPackage(pkg)?.let {
                 startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                AppLaunchLog(this).record(pkg) // feeds the predictive "Apps, right now" row
             }
         }
     }

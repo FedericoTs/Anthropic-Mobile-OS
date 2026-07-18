@@ -6,11 +6,11 @@
 
     <string name="home_hero">What do you want to do?</string>
     <string name="home_send">Go</string>
-    <string name="home_recent">Recent</string>
-    <string name="home_recent_none">No recent activity yet.</string>
     <string name="home_apps">Apps</string>
     <string name="home_right_now">Right now</string>
     <string name="home_right_now_spark">✦</string>
+    <string name="home_apps_now">Apps, right now</string>
+    <string name="home_apps_now_caption">adapts to your routine</string>
     <string name="home_greeting">%1$s, %2$s</string>
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>

@@ -16,6 +16,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import org.agentnativeos.app.AppLaunchLog
 import org.agentnativeos.app.CredentialStore
 import org.agentnativeos.app.HomeAction
 import org.agentnativeos.app.HomeRouter
@@ -24,8 +25,8 @@ import org.agentnativeos.app.PersistentTaskMemory
 import org.agentnativeos.app.PredictionStore
 import org.agentnativeos.app.R
 import org.agentnativeos.app.device.AgentAccessibilityService
-import org.agentnativeos.core.memory.TaskStatus
 import org.agentnativeos.core.model.ModelCatalog
+import org.agentnativeos.core.predict.AppUsageRanker
 import org.agentnativeos.core.predict.Suggestion
 
 /**
@@ -63,25 +64,16 @@ class HomeActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         findViewById<TextView>(R.id.txt_greeting).text = greeting()
+        findViewById<TextView>(R.id.txt_clock).text = java.time.LocalTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("H:mm"))
 
         // Reflect the chosen model on the pill (DESIGN: dot + model name + swap).
         val model = ModelCatalog.byId(ModelPreferences(this).selected)
         findViewById<Button>(R.id.btn_swap_model).text =
             getString(R.string.home_model_pill, model.shortLabel)
 
-        // Recent activity (agent memory) — the home's quiet record of what it did.
-        val recent = PersistentTaskMemory(this).recent(3)
-        findViewById<TextView>(R.id.txt_recent).text =
-            if (recent.isEmpty()) {
-                getString(R.string.home_recent_none)
-            } else {
-                recent.joinToString("\n") {
-                    val mark = if (it.status == TaskStatus.COMPLETED) "✓" else "⚠"
-                    "$mark ${it.intent}"
-                }
-            }
-
         renderSuggestions()
+        renderAppsNow()
     }
 
     /** The predictive "Right now" section: learned suggestions for this moment (hidden if none). */
@@ -139,6 +131,87 @@ class HomeActivity : AppCompatActivity() {
             },
         )
         return row
+    }
+
+    /** The predictive app shelf: apps you tend to open around now, most-recent as fallback. */
+    private fun renderAppsNow() {
+        val section = findViewById<LinearLayout>(R.id.apps_now_section)
+        val row = findViewById<LinearLayout>(R.id.apps_now_row)
+        row.removeAllViews()
+
+        val zone = java.time.ZoneId.systemDefault()
+        val ranked = AppUsageRanker().rank(
+            AppLaunchLog(this).events(zone),
+            org.agentnativeos.core.predict.NowContext.at(System.currentTimeMillis(), zone),
+            limit = SHELF_SIZE,
+        ).toMutableList()
+
+        // Fill remaining slots from the launcher list so the shelf is whole from day one.
+        if (ranked.size < SHELF_SIZE) {
+            val pm = packageManager
+            val launchers = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            pm.queryIntentActivities(launchers, 0)
+                .mapNotNull { it.activityInfo?.packageName }
+                .filter { it != packageName && it !in ranked }
+                .distinct()
+                .take(SHELF_SIZE - ranked.size)
+                .forEach { ranked.add(it) }
+        }
+
+        val tiles = ranked.mapNotNull { appTile(it) }
+        if (tiles.isEmpty()) {
+            section.visibility = View.GONE
+            return
+        }
+        tiles.forEach { row.addView(it) }
+        section.visibility = View.VISIBLE
+    }
+
+    /** One shelf tile: rounded surface square with the app icon, label beneath. */
+    private fun appTile(pkg: String): View? {
+        val pm = packageManager
+        val (icon, label) = try {
+            pm.getApplicationIcon(pkg) to pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+        } catch (_: Exception) {
+            return null // uninstalled since it was logged
+        }
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            isClickable = true
+            contentDescription = label
+            setOnClickListener {
+                pm.getLaunchIntentForPackage(pkg)?.let { launch ->
+                    startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    AppLaunchLog(this@HomeActivity).record(pkg)
+                }
+            }
+        }
+        column.addView(
+            android.widget.FrameLayout(this).apply {
+                background = ContextCompat.getDrawable(this@HomeActivity, R.drawable.bg_input)
+                layoutParams = LinearLayout.LayoutParams(dp(60), dp(60))
+                addView(
+                    android.widget.ImageView(this@HomeActivity).apply {
+                        setImageDrawable(icon)
+                        layoutParams = android.widget.FrameLayout.LayoutParams(dp(32), dp(32), Gravity.CENTER)
+                    },
+                )
+            },
+        )
+        column.addView(
+            TextView(this).apply {
+                text = label
+                textSize = 12f
+                setTextColor(color(R.color.muted))
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(dp(2), dp(6), dp(2), 0)
+            },
+        )
+        return column
     }
 
     /** A warm, localized greeting for the top of the home ("Good morning, Saturday"). */
@@ -233,8 +306,10 @@ class HomeActivity : AppCompatActivity() {
         val match = pm.queryIntentActivities(main, 0)
             .firstOrNull { it.loadLabel(pm).toString().contains(query, ignoreCase = true) }
             ?: return false
-        val launch = pm.getLaunchIntentForPackage(match.activityInfo.packageName) ?: return false
+        val pkg = match.activityInfo.packageName
+        val launch = pm.getLaunchIntentForPackage(pkg) ?: return false
         startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        AppLaunchLog(this).record(pkg) // feeds the predictive "Apps, right now" row
         toast(getString(R.string.opening, match.loadLabel(pm).toString()))
         return true
     }
@@ -245,5 +320,6 @@ class HomeActivity : AppCompatActivity() {
     private companion object {
         const val UI_PREFS = "agent_ui"
         const val KEY_OVERLAY_ASKED = "overlay_asked"
+        const val SHELF_SIZE = 5
     }
 }
