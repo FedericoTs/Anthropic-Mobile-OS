@@ -1,6 +1,7 @@
 package org.agentnativeos.app
 
 import android.content.Context
+import android.util.Log
 import org.agentnativeos.core.memory.TaskStatus
 import org.agentnativeos.core.predict.NowContext
 import org.agentnativeos.core.predict.Suggestion
@@ -36,12 +37,18 @@ class PredictionStore(context: Context) {
 
     /** Suggestions for the current moment, from completed task history. Empty if disabled. */
     fun suggestionsNow(memory: PersistentTaskMemory, nowMs: Long = System.currentTimeMillis()): List<Suggestion> {
-        if (!enabled) return emptyList()
+        if (!enabled) {
+            Log.i(TAG, "suggest: predictions disabled")
+            return emptyList()
+        }
         val zone = ZoneId.systemDefault()
-        val history = memory.recent(HISTORY)
-            .filter { it.status == TaskStatus.COMPLETED }
-            .map { UsageEvent.from(it, zone) }
-        return engine().suggest(history, NowContext.at(nowMs, zone), feedback())
+        val now = NowContext.at(nowMs, zone)
+        val completed = memory.recent(HISTORY).filter { it.status == TaskStatus.COMPLETED }
+        val history = completed.map { UsageEvent.from(it, zone) }
+        val result = engine().suggest(history, now, feedback())
+        // Diagnostic: why the "Right now" section is / isn't showing.
+        Log.i(TAG, "suggest: demo=$demoMode completed=${completed.size} now=${now.bucket}/${now.dayClass} -> ${result.size}")
+        return result
     }
 
     fun recordShown(intents: List<String>) {
@@ -77,6 +84,7 @@ class PredictionStore(context: Context) {
     }
 
     private companion object {
+        const val TAG = "AGENT_PREDICT"
         const val FILE = "agent_predict"
         const val KEY_FEEDBACK = "feedback"
         const val KEY_ENABLED = "enabled"
