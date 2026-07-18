@@ -76,6 +76,8 @@ class AgentLoop(
     private val capabilities: List<Capability> = emptyList(),
     /** Recent tasks (newest first) for continuity and "what have you done?". */
     private val recentTasks: List<org.agentnativeos.core.memory.TaskRecord> = emptyList(),
+    /** Recurring user interests (taste context for personalized answers, never authority). */
+    private val userInterests: List<String> = emptyList(),
     private val cancelled: () -> Boolean = { false },
     private val undo: org.agentnativeos.core.undo.UndoStack? = null,
     private val compensationPlanner: org.agentnativeos.core.undo.CompensationPlanner =
@@ -144,6 +146,7 @@ class AgentLoop(
                     availableApps = availableApps,
                     capabilities = capabilities,
                     recentTasks = recentTasks,
+                    userInterests = userInterests,
                     lastError = lastError,
                 ),
             )
@@ -167,6 +170,7 @@ class AgentLoop(
                             availableApps = availableApps,
                             capabilities = capabilities,
                             recentTasks = recentTasks,
+                            userInterests = userInterests,
                         ),
                         action.summary,
                     )

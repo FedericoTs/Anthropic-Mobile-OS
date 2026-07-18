@@ -57,6 +57,12 @@ object AgentController {
             bus.subscribe(EventConsumer { event -> AgentSession.emit(event) })
             val apps = installedApps(service)
             val capabilities = DeviceCapabilities.discover(service)
+            // The taste profile: recurring interests mined from the user's own completed
+            // tasks — context that personalizes answers, never authority over the intent.
+            val interests = org.agentnativeos.core.predict.InterestMiner.topInterests(
+                memory.recent(50).filter { it.status == org.agentnativeos.core.memory.TaskStatus.COMPLETED },
+                System.currentTimeMillis(),
+            )
 
             // E2 stretch (Phase 5): a compound intent fans out to parallel sub-agents.
             // Cheap connective prefilter first; the decomposer model has the final say
@@ -69,7 +75,7 @@ object AgentController {
             }
 
             val result = if (goals.size > 1) {
-                runCoordinated(service, provider, confirm, bus, goals, apps, capabilities)
+                runCoordinated(service, provider, confirm, bus, goals, apps, capabilities, interests)
             } else {
                 AgentLoop(
                     perceiver = service,
@@ -91,6 +97,7 @@ object AgentController {
                     capabilities = capabilities,
                     // What the agent has done before — continuity + "what have you done?".
                     recentTasks = memory.recent(8),
+                    userInterests = interests,
                     cancelled = { AgentSession.stopRequested },
                     undo = undo,
                 ).run(intent)
@@ -115,6 +122,7 @@ object AgentController {
         goals: List<String>,
         apps: List<AppInfo>,
         capabilities: List<org.agentnativeos.core.model.Capability>,
+        interests: List<String>,
     ): LoopResult {
         val now = { System.currentTimeMillis() }
         val corr = Correlation("multi", 0)
@@ -131,6 +139,7 @@ object AgentController {
                 provider = provider,
                 availableApps = apps,
                 capabilities = capabilities,
+                userInterests = interests,
                 bus = bus,
                 clock = now,
                 cancelled = { AgentSession.stopRequested },

@@ -29,6 +29,7 @@ class ModelSubAgent(
     private val provider: ModelProvider,
     private val availableApps: List<AppInfo> = emptyList(),
     private val capabilities: List<Capability> = emptyList(),
+    private val userInterests: List<String> = emptyList(),
     private val bus: EventBus? = null,
     private val taskId: String = "multi",
     private val clock: () -> Long = { 0L },
@@ -64,6 +65,7 @@ class ModelSubAgent(
                 history = history.toList(),
                 availableApps = availableApps,
                 capabilities = capabilities,
+                userInterests = userInterests,
                 lastError = lastError,
             )
             step++

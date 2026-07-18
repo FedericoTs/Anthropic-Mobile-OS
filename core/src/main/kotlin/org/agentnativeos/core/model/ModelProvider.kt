@@ -48,6 +48,8 @@ data class PlanningContext(
     val recentTasks: List<TaskRecord> = emptyList(),
     /** The previous attempt's failure, if any, so the model can try something else. */
     val lastError: String? = null,
+    /** Recurring interests mined on-device from the user's own usage (taste context). */
+    val userInterests: List<String> = emptyList(),
 )
 
 /** A second opinion on a claimed completion: is the task ACTUALLY done on the live screen? */

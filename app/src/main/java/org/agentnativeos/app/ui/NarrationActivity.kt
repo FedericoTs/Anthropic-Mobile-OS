@@ -150,6 +150,15 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
             setTypeface(null, Typeface.NORMAL)
         }
 
+        // The RESULT gets its own surface — a calm serif answer card, distinct from the
+        // mono thinking lines and step rows (DESIGN: the payoff of "watch it think").
+        if (event is NarrationEvent.Done) {
+            activeRow = null
+            timeline.addView(resultCard(event.summary))
+            scrollToEnd()
+            return
+        }
+
         val row = TextView(this).apply {
             textSize = 16f
             val pad = (6 * resources.displayMetrics.density).toInt()
@@ -162,11 +171,6 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                 row.typeface = Typeface.MONOSPACE
                 row.setTextColor(color(R.color.muted))
                 row.textSize = 14f
-            }
-            is NarrationEvent.Done -> {
-                row.text = "✓ ${event.live()}"
-                row.setTextColor(color(R.color.accent))
-                row.setTypeface(null, Typeface.BOLD)
             }
             is NarrationEvent.Failure -> {
                 row.text = "⚠ ${event.live()}"
@@ -190,6 +194,40 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
 
         timeline.addView(row)
         scrollToEnd()
+    }
+
+    /** The answer surface: warm card, coral check caption, serif body — the result, not a log line. */
+    @SuppressLint("SetTextI18n")
+    private fun resultCard(summary: String): View {
+        fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+        val card = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_input)
+            setPadding(dp(18), dp(14), dp(18), dp(16))
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(10) }
+        }
+        card.addView(
+            TextView(this).apply {
+                text = "✓ ${getString(R.string.result_done)}"
+                textSize = 13f
+                setTextColor(color(R.color.accent))
+                setTypeface(typeface, Typeface.BOLD)
+            },
+        )
+        card.addView(
+            TextView(this).apply {
+                text = summary
+                textSize = 17f
+                typeface = Typeface.SERIF
+                setTextColor(color(R.color.text))
+                setLineSpacing((4 * resources.displayMetrics.density), 1f)
+                setPadding(0, dp(6), 0, 0)
+            },
+        )
+        return card
     }
 
     private fun scrollToEnd() = scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }

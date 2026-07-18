@@ -396,15 +396,38 @@ capture) suitable for the README.
 
 ---
 
-### Phase 6 — Reserves (explicitly parked; promote only by editing this file)
+### Phase 6 — Answer surfaces: the OS answers YOU (promoted 2026-06-23, Federico) · L
 
-- **Fully-local/offline model backend** — v1.1 headline; plugs into `ModelProvider`;
-  needs small-model planning eval. (The deepest open flex; not before the demo.)
+The vision shift: instead of only driving apps and reporting back, the OS should ANSWER
+in itself — find the pizzeria, tell you where it is, show a view of it, suggest from the
+menu knowing your tastes. Decomposed honestly:
+
+**6A — Answer card · SHIPPED 2026-06-23.** A completed task renders as a calm result
+surface (warm card, coral ✓ caption, serif body — DESIGN's "calm result block"), not a
+log row. The payoff of "watch it think" finally looks like a payoff.
+**6B — Taste profile · SHIPPED 2026-06-23.** `InterestMiner` (core/predict): recurring
+interests mined on-device from completed intents (tokenized, EN+IT stopwords, 30-day
+half-life, ≥2 recent mentions). Fed to the planner via `PlanningContext.userInterests`
+in BOTH single and multi paths, with the hard rule: personalization context, NEVER
+authority — it may flavor answers/suggestions, never change or add to the intent.
+**6C — App-as-sensor rich results · NEXT.** The pattern that makes "find + show + suggest"
+real WITHOUT new permissions: the agent drives an app that has the data (Maps has
+location + places), PERCEIVES its results from the accessibility tree, and answers
+in-OS. Design: (1) prompt guidance for "look it up in <app>, read the results, answer";
+(2) structured answer payload (kind + fields: place name/address/rating) inferred from
+the Done summary → richer cards: action chips ("Open in Maps" geo: link, "Navigate"),
+menu-suggestion block phrased from the taste profile; (3) later: inline static map /
+custom visualization (needs a tiles source — design decision pending, keep self-contained).
+**Caveats:** menus are rarely in the a11y tree — v1 menu suggestions are model knowledge
++ taste profile, labeled as suggestions, not scraped fact. Location stays app-side (Maps'
+own permission), never ours.
+
+### Reserves (still parked)
+- **Fully-local/offline model backend** — v1.1 headline; plugs into `ModelProvider`.
 - **Default-launcher mode** — HomeActivity as the actual launcher; unlocks shortcut
-  discovery (`LauncherApps`) for richer per-app capabilities.
-- **Adaptive result UI** — content-aware result surfaces (design pass first).
-- **Voice input** · **capability/skill marketplace** (playbooks are its seed) ·
-  **iOS/PWA question** · **AOSP/Play-Integrity**: resolved non-goal for the demo.
+  discovery (`LauncherApps`); the natural end-state of the predictive home.
+- **Capability/skill marketplace** (playbooks are its seed) · **iOS/PWA question** ·
+  **AOSP/Play-Integrity**: resolved non-goal for the demo.
 
 ---
 

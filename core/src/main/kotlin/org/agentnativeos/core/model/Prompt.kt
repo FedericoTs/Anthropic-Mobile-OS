@@ -153,6 +153,16 @@ object Prompt {
             appendLine("""Installed apps you can launch with {"action":"launch","package":"<package>"}:""")
             context.availableApps.forEach { appendLine("- ${it.label}  ${it.packageName}") }
         }
+        if (context.userInterests.isNotEmpty()) {
+            // Taste context, never authority: it may flavor an answer or suggestion; it
+            // must never change, narrow, or add to what the user actually asked for.
+            appendLine(
+                "The user's recurring interests, learned on-device from their own usage " +
+                    "(use them to PERSONALIZE answers and suggestions — e.g. which dishes, " +
+                    "results or options to highlight — but NEVER to change or add to the " +
+                    "Intent): ${context.userInterests.joinToString(", ")}",
+            )
+        }
         context.lastError?.let {
             appendLine("Your previous attempt failed: $it. Try a different element or approach.")
         }

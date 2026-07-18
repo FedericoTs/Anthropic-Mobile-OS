@@ -100,6 +100,22 @@ class PromptTest {
     }
 
     @Test
+    fun interestsArePersonalizationContextNeverAuthority() {
+        val ctx = PlanningContext(
+            intent = "find a pizzeria nearby and tell me about it",
+            untrustedScreen = "(screen)",
+            stepIndex = 0,
+            userInterests = listOf("pizza", "vegetarian", "jazz"),
+        )
+        val user = Prompt.user(ctx).lowercase().replace(Regex("\\s+"), " ")
+        assertTrue("profile is rendered", user.contains("pizza, vegetarian, jazz"))
+        assertTrue("framed as personalization", user.contains("personalize"))
+        assertTrue("never overrides the intent", user.contains("never to change or add to the intent"))
+        // No interests -> no profile block at all.
+        assertTrue(!Prompt.user(ctx.copy(userInterests = emptyList())).contains("recurring interests"))
+    }
+
+    @Test
     fun userPromptFramesRecentTasksAsHistoryNotCompletion() {
         val ctx = PlanningContext(
             intent = "send an email to a@b.com",
