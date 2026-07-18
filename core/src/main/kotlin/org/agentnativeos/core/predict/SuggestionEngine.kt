@@ -38,6 +38,7 @@ class SuggestionEngine(
     private val recentSuppressMs: Long = 3 * HOUR_MS,
     private val dismissMuteMs: Long = 7 * DAY_MS,
     private val ignoredMuteThreshold: Int = 5,
+    private val throttleMinShown: Int = 10,
 ) {
     fun suggest(
         history: List<UsageEvent>,
@@ -46,8 +47,8 @@ class SuggestionEngine(
     ): List<Suggestion> {
         // Global throttle: if the user keeps ignoring suggestions, go quiet.
         val cap = when {
-            feedback.totalShown >= THROTTLE_MIN_SHOWN && feedback.tapRate() < 0.10 -> 0
-            feedback.totalShown >= THROTTLE_MIN_SHOWN && feedback.tapRate() < 0.20 -> 1
+            feedback.totalShown >= throttleMinShown && feedback.tapRate() < 0.10 -> 0
+            feedback.totalShown >= throttleMinShown && feedback.tapRate() < 0.20 -> 1
             else -> maxSuggestions
         }
         if (cap == 0) return emptyList()
@@ -74,9 +75,21 @@ class SuggestionEngine(
         return false
     }
 
-    private companion object {
-        const val HOUR_MS = 60L * 60 * 1000
-        const val DAY_MS = 24 * HOUR_MS
-        const val THROTTLE_MIN_SHOWN = 10
+    companion object {
+        private const val HOUR_MS = 60L * 60 * 1000
+        private const val DAY_MS = 24 * HOUR_MS
+
+        /**
+         * Relaxed thresholds so a suggestion appears after a SINGLE run, with no cooldown,
+         * mute, or throttle — for demoing the "Right now" surface on a device that has no
+         * habit history yet. NOT the production policy (which is calm/precision-first).
+         */
+        fun demo(): SuggestionEngine = SuggestionEngine(
+            minSupport = 1,
+            minScore = 0.0,
+            recentSuppressMs = 0L,
+            ignoredMuteThreshold = Int.MAX_VALUE,
+            throttleMinShown = Int.MAX_VALUE,
+        )
     }
 }

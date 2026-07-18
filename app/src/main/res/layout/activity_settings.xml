@@ -104,13 +104,25 @@
             android:id="@+id/switch_predictions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="28dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/bg_input"
             android:minHeight="56dp"
             android:paddingHorizontal="16dp"
             android:text="@string/settings_predictions_switch"
             android:textColor="@color/text"
             android:textSize="16sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_predictions_demo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            android:background="@drawable/bg_input"
+            android:minHeight="56dp"
+            android:paddingHorizontal="16dp"
+            android:text="@string/settings_predictions_demo_switch"
+            android:textColor="@color/muted"
+            android:textSize="14sp" />
 
         <!-- API key (the default, supported path) -->
         <TextView

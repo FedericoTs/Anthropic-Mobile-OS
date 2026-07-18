@@ -78,6 +78,17 @@ class SuggestionEngineTest {
     }
 
     @Test
+    fun demoPresetSuggestsAfterASingleRunWithNoCooldown() {
+        val onceJustNow = listOf(
+            UsageEvent("start a 5 minute timer", now - 60_000L, 9, DayClass.WEEKDAY), // 1 min ago
+        )
+        // Production stays quiet: one occurrence is below support, and it was just done.
+        assertTrue(engine.suggest(onceJustNow, morningNow()).isEmpty())
+        // Demo preset surfaces it immediately so the "Right now" surface can be seen.
+        assertEquals(1, SuggestionEngine.demo().suggest(onceJustNow, morningNow()).size)
+    }
+
+    @Test
     fun suggestionsAreInertData_theEngineNeverActs() {
         // The only output is Suggestion(intent, score) — plain data. There is no Actuator or
         // Perceiver anywhere in this package, so nothing runs until the UI hands the intent to

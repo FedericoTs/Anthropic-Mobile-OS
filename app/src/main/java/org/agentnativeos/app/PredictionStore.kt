@@ -21,12 +21,18 @@ import java.time.ZoneId
 class PredictionStore(context: Context) {
 
     private val prefs = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-    private val engine = SuggestionEngine()
 
     /** User-owned master switch (default on). */
     var enabled: Boolean
         get() = prefs.getBoolean(KEY_ENABLED, true)
         set(value) { prefs.edit().putBoolean(KEY_ENABLED, value).apply() }
+
+    /** Testing aid: suggest after a single run, no cooldown/mute/throttle (default off). */
+    var demoMode: Boolean
+        get() = prefs.getBoolean(KEY_DEMO, false)
+        set(value) { prefs.edit().putBoolean(KEY_DEMO, value).apply() }
+
+    private fun engine(): SuggestionEngine = if (demoMode) SuggestionEngine.demo() else SuggestionEngine()
 
     /** Suggestions for the current moment, from completed task history. Empty if disabled. */
     fun suggestionsNow(memory: PersistentTaskMemory, nowMs: Long = System.currentTimeMillis()): List<Suggestion> {
@@ -35,7 +41,7 @@ class PredictionStore(context: Context) {
         val history = memory.recent(HISTORY)
             .filter { it.status == TaskStatus.COMPLETED }
             .map { UsageEvent.from(it, zone) }
-        return engine.suggest(history, NowContext.at(nowMs, zone), feedback())
+        return engine().suggest(history, NowContext.at(nowMs, zone), feedback())
     }
 
     fun recordShown(intents: List<String>) {
@@ -74,6 +80,7 @@ class PredictionStore(context: Context) {
         const val FILE = "agent_predict"
         const val KEY_FEEDBACK = "feedback"
         const val KEY_ENABLED = "enabled"
+        const val KEY_DEMO = "demo_mode"
         const val HISTORY = 50
     }
 }

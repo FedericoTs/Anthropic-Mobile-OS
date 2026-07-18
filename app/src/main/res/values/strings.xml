@@ -18,6 +18,9 @@
     <string name="settings_predictions_switch">Show suggestions on the home</string>
     <string name="settings_predictions_on">Suggestions on.</string>
     <string name="settings_predictions_off">Suggestions off.</string>
+    <string name="settings_predictions_demo_switch">Demo mode — suggest after one run</string>
+    <string name="settings_predictions_demo_on">Demo mode on — do a task, then reopen the home to see it suggested.</string>
+    <string name="settings_predictions_demo_off">Demo mode off — suggestions need a real habit again.</string>
     <string name="swap_model_pill">Claude · swap model</string>
     <string name="home_model_pill">● %1$s · swap model</string>
 

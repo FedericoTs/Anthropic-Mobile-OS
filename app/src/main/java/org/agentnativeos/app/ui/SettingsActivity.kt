@@ -58,6 +58,14 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        findViewById<SwitchCompat>(R.id.switch_predictions_demo).apply {
+            isChecked = predictions.demoMode
+            setOnCheckedChangeListener { _, checked ->
+                predictions.demoMode = checked
+                toast(getString(if (checked) R.string.settings_predictions_demo_on else R.string.settings_predictions_demo_off))
+            }
+        }
+
         val keyInput = findViewById<EditText>(R.id.input_key)
         val tokenInput = findViewById<EditText>(R.id.input_token)
 
