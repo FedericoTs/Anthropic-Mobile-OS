@@ -34,7 +34,7 @@ class ModelSubAgent(
     private val taskId: String = "multi",
     private val clock: () -> Long = { 0L },
     private val maxSteps: Int = 12,
-    private val maxDoneVerifyFails: Int = 2,
+    private val maxDoneVerifyFails: Int = 3,
     private val cancelled: () -> Boolean = { false },
 ) : SubAgent {
 
@@ -79,9 +79,10 @@ class ModelSubAgent(
                     if (doneVerifyFails >= maxDoneVerifyFails) {
                         return finish(ok = false, "reported done but could not verify: ${verdict.reason}")
                     }
-                    // Not actually done — feed the reason back and re-plan right away.
+                    // Not actually done — feed the reason back and force a real move.
                     lastError = "You reported this goal done, but the screen says it is NOT " +
-                        "complete: ${verdict.reason}. Keep going and actually finish it."
+                        "complete: ${verdict.reason}. Your NEXT reply must be a REAL action " +
+                        "(invoke a capability, launch an app, or act on the screen), NOT done."
                 }
                 is AgentAction.Abort -> return finish(ok = false, action.reason)
                 else -> {

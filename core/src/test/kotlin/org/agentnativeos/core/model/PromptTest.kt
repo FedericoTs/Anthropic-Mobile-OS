@@ -51,6 +51,10 @@ class PromptTest {
             "must forbid citing a previous run to report done on step one",
             system.contains("never reply done on the first step"),
         )
+        assertTrue(
+            "a suggestion re-run is a fresh request to do it again",
+            system.contains("they want it done again"),
+        )
     }
 
     @Test

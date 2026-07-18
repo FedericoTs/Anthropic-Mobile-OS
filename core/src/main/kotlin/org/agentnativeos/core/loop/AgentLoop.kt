@@ -69,7 +69,7 @@ class AgentLoop(
     /** A blank/transitional screen re-perceives rather than planning against nothing, up to this cap. */
     private val maxEmptyPerceives: Int = 3,
     /** A claimed "done" the screen can't confirm re-plans; this many in a row => honest abort. */
-    private val maxDoneVerifyFails: Int = 2,
+    private val maxDoneVerifyFails: Int = 3,
     /** Apps the planner may launch directly by package (perceived from the device). */
     private val availableApps: List<AppInfo> = emptyList(),
     /** Direct device capabilities the planner may invoke instead of driving the UI. */
@@ -178,10 +178,13 @@ class AgentLoop(
                     if (!verdict.verified) {
                         doneVerifyFails++
                         if (doneVerifyFails < maxDoneVerifyFails) {
-                            // Not actually done — feed the reason back and keep working.
+                            // Not actually done — feed the reason back and force a real move:
+                            // a lazy model otherwise claims done again and burns the cap.
                             lastError = "You reported the task done, but a check of the current " +
                                 "screen says it is NOT complete: ${verdict.reason}. You have not " +
-                                "actually done it yet this run — stop citing past runs and do it now."
+                                "actually done it yet this run — stop citing past runs. Your NEXT " +
+                                "reply must be a REAL action (invoke a capability, launch an app, " +
+                                "or act on the screen), NOT done."
                             continue
                         }
                         // Claimed done but never verifiable — hand off honestly rather than
