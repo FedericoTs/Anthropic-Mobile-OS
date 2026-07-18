@@ -31,8 +31,14 @@ sealed interface AgentAction {
     data class Abort(val reason: String) : AgentAction
 }
 
-/** One actionable place in an answer: display name, one-line detail, a maps-ready query. */
-data class Place(val name: String, val detail: String = "", val query: String = "")
+/** One actionable place in an answer: display name, one-line detail, a maps-ready query,
+ *  and (for the top pick) WHY it was chosen — the visible reasoning behind the ranking. */
+data class Place(
+    val name: String,
+    val detail: String = "",
+    val query: String = "",
+    val why: String = "",
+)
 
 /** Scroll/swipe direction for [AgentAction.Scroll] (wheel pickers and lists). */
 enum class ScrollDirection { UP, DOWN }

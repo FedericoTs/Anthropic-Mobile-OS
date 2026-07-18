@@ -109,6 +109,17 @@ class PromptTest {
         assertTrue("structured places form is specified", sys.contains("\"places\""))
         assertTrue("only real, perceived places", sys.contains("never invented"))
         assertTrue("optional — omitted otherwise", sys.contains("otherwise omit \"places\""))
+        assertTrue("ranked best first", sys.contains("best first"))
+        assertTrue("the top pick explains itself", sys.contains("\"why\""))
+    }
+
+    @Test
+    fun lookupRuleDemandsComparisonShoppingNotFirstResult() {
+        val sys = Prompt.system().lowercase().replace(Regex("\\s+"), " ")
+        assertTrue("never settle for the first result", sys.contains("never settle for the first"))
+        assertTrue("scroll to widen the pool", sys.contains("scroll the results list"))
+        assertTrue("explicit criteria", sys.contains("rating and review count"))
+        assertTrue("the summary states why", sys.contains("state why you chose"))
     }
 
     @Test

@@ -358,20 +358,35 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                 setPadding(0, dp(6), 0, 0)
             },
         )
-        done.places.forEach { card.addView(placeCard(it)) }
+        done.places.forEachIndexed { i, place -> card.addView(placeCard(place, topPick = i == 0)) }
         return card
     }
 
-    /** One actionable place from the answer: name + detail + one-tap Maps / Navigate. */
-    private fun placeCard(place: org.agentnativeos.core.action.Place): View {
+    /** One actionable place from the answer: name + detail + WHY (top pick) + Maps / Navigate. */
+    private fun placeCard(place: org.agentnativeos.core.action.Place, topPick: Boolean): View {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = ContextCompat.getDrawable(this@NarrationActivity, R.drawable.bg_pill)
+            background = ContextCompat.getDrawable(
+                this@NarrationActivity,
+                if (topPick) R.drawable.bg_card_active else R.drawable.bg_pill,
+            )
             setPadding(dp(14), dp(12), dp(14), dp(12))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(10) }
+        }
+        if (topPick) {
+            box.addView(
+                TextView(this).apply {
+                    text = getString(R.string.place_top_pick)
+                    textSize = 11f
+                    letterSpacing = 0.08f
+                    setTypeface(typeface, Typeface.BOLD)
+                    setTextColor(color(R.color.accent_press))
+                    setPadding(0, 0, 0, dp(4))
+                },
+            )
         }
         box.addView(
             TextView(this).apply {
@@ -388,6 +403,17 @@ class NarrationActivity : AppCompatActivity(), AgentSession.Listener {
                     textSize = 13f
                     setTextColor(color(R.color.muted))
                     setPadding(0, dp(2), 0, 0)
+                },
+            )
+        }
+        if (place.why.isNotEmpty()) {
+            box.addView(
+                TextView(this).apply {
+                    text = place.why
+                    textSize = 13f
+                    setTypeface(typeface, Typeface.ITALIC)
+                    setTextColor(color(R.color.muted))
+                    setPadding(0, dp(3), 0, 0)
                 },
             )
         }

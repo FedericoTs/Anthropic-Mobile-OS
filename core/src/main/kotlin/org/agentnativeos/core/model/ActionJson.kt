@@ -77,6 +77,7 @@ object ActionJson {
                     name = name,
                     detail = (p["detail"] as? String)?.trim().orEmpty(),
                     query = (p["query"] as? String)?.trim()?.ifEmpty { name } ?: name,
+                    why = (p["why"] as? String)?.trim().orEmpty(),
                 )
             }
             ?.take(3)

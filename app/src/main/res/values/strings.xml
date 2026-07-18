@@ -50,6 +50,7 @@
     <string name="confirm_caution_caps">NEEDS YOUR OK</string>
     <string name="step_active_caps">CURRENTLY ACTIVE</string>
     <string name="result_done">Done</string>
+    <string name="place_top_pick">TOP PICK</string>
     <string name="place_open_maps">Open in Maps</string>
     <string name="place_navigate">Navigate</string>
     <string name="place_no_maps">No maps app can open this.</string>

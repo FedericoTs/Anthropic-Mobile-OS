@@ -12,7 +12,7 @@ class ActionJsonTest {
     @Test
     fun parsesADoneCarryingStructuredPlaces() {
         val raw = """{"action":"done","summary":"Found two spots.","places":[
-            {"name":"Buca di Beppo","detail":"4.4★ · 5.9 mi","query":"Buca di Beppo Italian Restaurant"},
+            {"name":"Buca di Beppo","detail":"4.4★ · 5.9 mi","query":"Buca di Beppo Italian Restaurant","why":"highest rated open now"},
             {"name":"Azzurro","detail":"","query":""},
             {"name":"  "},
             {"name":"Extra1"},{"name":"Extra2"}
@@ -23,6 +23,8 @@ class ActionJsonTest {
         assertEquals("Buca di Beppo", done.places[0].name)
         assertEquals("4.4★ · 5.9 mi", done.places[0].detail)
         assertEquals("Buca di Beppo Italian Restaurant", done.places[0].query)
+        assertEquals("highest rated open now", done.places[0].why)
+        assertEquals("non-pick places default to no why", "", done.places[1].why)
         assertEquals("empty query falls back to the name", "Azzurro", done.places[1].query)
         // A plain done still parses through the flat path with no places.
         assertEquals(
