@@ -3,6 +3,7 @@
      warm paper, serif wordmark, one calm column. Content scrolls; the model pill +
      app-grid bar stays pinned in the thumb zone. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -60,38 +61,55 @@
                     tools:ignore="RtlSymmetry" />
             </LinearLayout>
 
-            <!-- Intent input: the hero -->
+            <!-- Intent input: the hero — one rounded field with mic + coral send inside -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_input"
+                android:gravity="center_vertical"
+                android:minHeight="60dp"
+                android:orientation="horizontal"
+                android:paddingStart="18dp"
+                android:paddingEnd="8dp">
 
                 <EditText
                     android:id="@+id/input_intent"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_input"
+                    android:background="@null"
                     android:hint="@string/home_hero"
                     android:imeOptions="actionGo"
                     android:importantForAutofill="no"
                     android:inputType="text"
                     android:minHeight="58dp"
-                    android:paddingHorizontal="18dp"
                     android:textColor="@color/text"
                     android:textColorHint="@color/muted"
                     android:textSize="16sp" />
 
+                <ImageButton
+                    android:id="@+id/btn_mic"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/home_mic"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    app:tint="@color/muted" />
+
                 <Button
                     android:id="@+id/btn_go"
-                    android:layout_width="wrap_content"
-                    android:layout_height="58dp"
-                    android:layout_marginStart="8dp"
-                    android:backgroundTint="@color/accent"
-                    android:minWidth="64dp"
-                    android:text="@string/home_send"
-                    android:textAllCaps="false"
-                    android:textColor="@color/on_accent" />
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_send"
+                    android:contentDescription="@string/home_send"
+                    android:includeFontPadding="false"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="0dp"
+                    android:text="@string/home_send_glyph"
+                    android:textColor="@color/on_accent"
+                    android:textSize="18sp" />
             </LinearLayout>
 
             <!-- Predictive "Right now": learned suggestions, populated at runtime; hidden when none. -->

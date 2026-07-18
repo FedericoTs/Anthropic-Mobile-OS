@@ -39,12 +39,28 @@ class HomeActivity : AppCompatActivity() {
 
     private val predictions by lazy { PredictionStore(this) }
 
+    /** Voice input: the system recognizer returns text; it lands in the box and runs. */
+    private val voice = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        val spoken = result.data
+            ?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+            ?.firstOrNull()
+            ?.trim()
+            .orEmpty()
+        if (spoken.isNotEmpty()) {
+            findViewById<EditText>(R.id.input_intent).setText(spoken)
+            submit(spoken) // visible in the box while it runs — same path as typing + Go
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
         val input = findViewById<EditText>(R.id.input_intent)
         findViewById<Button>(R.id.btn_go).setOnClickListener { submit(input.text.toString()) }
+        findViewById<android.widget.ImageButton>(R.id.btn_mic).setOnClickListener { startVoiceInput() }
         input.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 submit(input.text.toString()); true
@@ -212,6 +228,22 @@ class HomeActivity : AppCompatActivity() {
             },
         )
         return column
+    }
+
+    /** Launch the system speech recognizer (no audio permission needed — it's a system UI). */
+    private fun startVoiceInput() {
+        val intent = Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+            )
+            putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, getString(R.string.home_voice_prompt))
+        }
+        try {
+            voice.launch(intent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            toast(getString(R.string.home_voice_unavailable))
+        }
     }
 
     /** A warm, localized greeting for the top of the home ("Good morning, Saturday"). */

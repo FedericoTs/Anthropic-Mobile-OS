@@ -6,6 +6,10 @@
 
     <string name="home_hero">What do you want to do?</string>
     <string name="home_send">Go</string>
+    <string name="home_send_glyph">➤</string>
+    <string name="home_mic">Speak your intent</string>
+    <string name="home_voice_prompt">What do you want to do?</string>
+    <string name="home_voice_unavailable">No speech recognizer on this device.</string>
     <string name="home_apps">Apps</string>
     <string name="home_right_now">Right now</string>
     <string name="home_right_now_spark">✦</string>
