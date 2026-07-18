@@ -62,6 +62,8 @@ class HomeActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
+        findViewById<TextView>(R.id.txt_greeting).text = greeting()
+
         // Reflect the chosen model on the pill (DESIGN: dot + model name + swap).
         val model = ModelCatalog.byId(ModelPreferences(this).selected)
         findViewById<Button>(R.id.btn_swap_model).text =
@@ -102,13 +104,13 @@ class HomeActivity : AppCompatActivity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(this@HomeActivity, R.drawable.bg_input)
-            setPadding(dp(16), dp(12), dp(12), dp(12))
-            minimumHeight = dp(56)
+            setPadding(dp(18), dp(14), dp(14), dp(14))
+            minimumHeight = dp(64)
             isClickable = true
             contentDescription = suggestion.intent
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { bottomMargin = dp(8) }
+            ).apply { bottomMargin = dp(10) }
             setOnClickListener { runSuggestion(suggestion.intent) }
             setOnLongClickListener { dismissSuggestion(suggestion.intent); true }
         }
@@ -117,6 +119,9 @@ class HomeActivity : AppCompatActivity() {
                 text = suggestion.intent
                 textSize = 16f
                 setTextColor(color(R.color.text))
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setLineSpacing(dp(2).toFloat(), 1f)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             },
         )
@@ -126,14 +131,28 @@ class HomeActivity : AppCompatActivity() {
                 setTextColor(color(R.color.on_accent))
                 backgroundTintList = ColorStateList.valueOf(color(R.color.accent))
                 isAllCaps = false
-                minWidth = dp(72)
+                minWidth = dp(76)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, dp(44),
-                ).apply { marginStart = dp(12) }
+                ).apply { marginStart = dp(14) }
                 setOnClickListener { runSuggestion(suggestion.intent) }
             },
         )
         return row
+    }
+
+    /** A warm, localized greeting for the top of the home ("Good morning, Saturday"). */
+    private fun greeting(): String {
+        val now = java.time.LocalDateTime.now()
+        val partRes = when (now.hour) {
+            in 5..11 -> R.string.home_greeting_morning
+            in 12..17 -> R.string.home_greeting_afternoon
+            else -> R.string.home_greeting_evening
+        }
+        val weekday = now.dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.FULL, java.util.Locale.getDefault(),
+        )
+        return getString(R.string.home_greeting, getString(partRes), weekday)
     }
 
     private fun runSuggestion(intent: String) {
